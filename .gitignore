@@ -17,3 +17,5 @@ coverage
 # Env files
 .env*
 !.env.example
+
+.nerdtree_bookmarks

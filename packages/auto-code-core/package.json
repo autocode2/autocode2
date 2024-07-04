@@ -1,8 +1,8 @@
 {
-  "name": "@mme/typescript-example-2",
+  "name": "@gingerhendrix/auto-code-core",
   "version": "0.0.0-development",
-  "description": "The first typescript example for the Monorepo example",
-  "author": "Luke Baker <luke.baker@live.com>",
+  "description": "The core library for the AutoCode project",
+  "author": "Gareth Andrew <gingerhendrix@gmail.com>",
   "license": "MIT",
   "keywords": [
     "monorepo",
@@ -10,7 +10,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bakeruk/modern-monorepo-example.git"
+    "url": "https://github.com/gingerhendrix/auto-code2.git"
   },
   "publishConfig": {
     "access": "public"

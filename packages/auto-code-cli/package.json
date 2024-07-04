@@ -1,16 +1,16 @@
 {
-  "name": "@mme/typescript-example-1",
+  "name": "@gingerhendrix/auto-code-cli",
   "version": "0.0.0-development",
-  "description": "The first typescript example for the Monorepo example",
-  "author": "Luke Baker <luke.baker@live.com>",
+  "description": "The CLI",
+  "author": "Gareth Andrew <ginerhendrix@gmail.com>",
   "license": "MIT",
   "keywords": [
-    "monorepo",
-    "typescript"
+    "llm",
+    "cli"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bakeruk/modern-monorepo-example.git"
+    "url": "https://github.com/gingerhendrix/auto-code2.git"
   },
   "publishConfig": {
     "access": "public"
@@ -33,6 +33,6 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@mme/typescript-example-2": "workspace:0.0.0-development"
+    "@gingerhendrix/auto-code-core": "workspace:*"
   }
 }
