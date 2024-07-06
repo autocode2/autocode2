@@ -32,5 +32,12 @@
     "test": "jest",
     "typecheck": "tsc"
   },
-  "devDependencies": {}
+  "dependencies": {
+    "@langchain/anthropic": "^0.2.3",
+    "@langchain/core": "^0.2.14",
+    "@langchain/langgraph": "^0.0.26",
+    "@langchain/openai": "^0.2.1",
+    "langchain": "^0.2.8",
+    "zod": "^3.23.8"
+  }
 }
