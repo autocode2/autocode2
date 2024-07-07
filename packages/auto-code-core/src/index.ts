@@ -1,6 +1,3 @@
-/**
- * World
- */
-export function world(override?: string) {
-  return override || "World";
-}
+import { runCodeAgent } from "./agents/codeAgent";
+
+export { runCodeAgent };

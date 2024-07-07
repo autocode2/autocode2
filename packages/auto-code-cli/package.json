@@ -33,6 +33,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@gingerhendrix/auto-code-core": "workspace:*"
+    "@gingerhendrix/auto-code-core": "workspace:*",
+    "commander": "^12.1.0"
   }
 }

@@ -1,6 +1,18 @@
-import { BaseMessage, SystemMessage } from "@langchain/core/messages";
+import {
+  AIMessage,
+  BaseMessage,
+  HumanMessage,
+  MessageContentText,
+  SystemMessage
+} from "@langchain/core/messages";
 import { StructuredTool } from "@langchain/core/tools";
-import { END, START, StateGraph, StateGraphArgs } from "@langchain/langgraph";
+import {
+  END,
+  MemorySaver,
+  START,
+  StateGraph,
+  StateGraphArgs
+} from "@langchain/langgraph";
 import { getModel } from "../llm/getModel";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { sendMessage, thinking } from "../tools/messages";
@@ -17,21 +29,6 @@ Use the following tools to perform the task:
  - remove-file: Remove a file
 `;
 
-export type State = {
-  messages: BaseMessage[];
-};
-
-export const stateChannels: StateGraphArgs<State>["channels"] = {
-  messages: {
-    value: (x?: BaseMessage[], y?: BaseMessage[]) => (x ?? []).concat(y ?? []),
-    default: () => []
-  }
-};
-
-export const initialState: State = {
-  messages: [new SystemMessage(systemPrompt)]
-};
-
 export const allTools: StructuredTool[] = [
   sendMessage,
   thinking,
@@ -40,25 +37,37 @@ export const allTools: StructuredTool[] = [
   replaceFile
 ];
 
-const toolsNode = new ToolNode<State>(allTools);
+export type ToolAction = {
+  name: string;
+  args: any;
+};
 
-const modelNode = async (state: State) => {
+export type CodeAgentResponse = {
+  message: string;
+  actions: ToolAction[];
+};
+
+export async function runCodeAgent(query: string) {
   const model = getModel().bind({
     tools: allTools
     //tool_choice: "required", // required is only supported by openai
   });
   const response = await model.invoke([
     new SystemMessage(systemPrompt),
-    ...state.messages
+    new HumanMessage(query)
   ]);
-  return { messages: [response] };
-};
+  const message = Array.isArray(response.content)
+    ? response.content
+        .filter((m) => m.type === "text")
+        .map((m) => (m as MessageContentText).text)
+        .join("\n")
+    : response.content;
 
-export const graph = new StateGraph<State>({
-  channels: stateChannels
-})
-  .addNode("model", modelNode)
-  .addNode("tools", toolsNode)
-  .addEdge(START, "model")
-  .addEdge("model", "tools")
-  .addEdge("tools", END);
+  return {
+    message,
+    actions: (response.tool_calls || []).map((toolCall) => ({
+      name: toolCall.name,
+      args: toolCall.args
+    }))
+  };
+}
