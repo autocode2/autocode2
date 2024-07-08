@@ -33,7 +33,9 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@commander-js/extra-typings": "^12.1.0",
     "@gingerhendrix/auto-code-core": "workspace:*",
-    "commander": "^12.1.0"
+    "commander": "^12.1.0",
+    "tiny-invariant": "^1.3.3"
   }
 }

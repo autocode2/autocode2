@@ -1,4 +1,4 @@
-import { program } from "commander";
+import { program } from "@commander-js/extra-typings";
 import codeCommand from "./commands/code";
 
 program
