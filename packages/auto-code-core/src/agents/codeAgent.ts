@@ -27,11 +27,13 @@ Use the following tools to perform the task:
  - replace-file: Replace the contents of a file, ensure that the full contents of the file are provided.
  - add-file: Add a new file
  - remove-file: Remove a file
+
+You may call multiple tools in a single response.  You may also call the same tool multiple times. Call all the necessary tools to complete the users request.
 `;
 
 export const allTools: StructuredTool[] = [
   sendMessage,
-  thinking,
+  //thinking,
   createFile,
   removeFile,
   replaceFile

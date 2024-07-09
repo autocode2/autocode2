@@ -16,4 +16,8 @@ export class CommandConfig {
       return this.opts.prompt || "";
     }
   }
+
+  getWorkDir() {
+    return process.cwd();
+  }
 }
