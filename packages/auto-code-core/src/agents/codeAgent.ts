@@ -3,6 +3,7 @@ import {
   BaseMessage,
   HumanMessage,
   MessageContentText,
+  OpenAIToolCall,
   SystemMessage
 } from "@langchain/core/messages";
 import { StructuredTool } from "@langchain/core/tools";
@@ -48,7 +49,7 @@ export const allTools: StructuredTool[] = [
 
 export type ToolAction = {
   name: string;
-  args: any;
+  args: Record<string, any>;
 };
 
 export type CodeAgentResponse = {
@@ -68,7 +69,7 @@ export async function runCodeAgent({
     //tool_choice: "required", // required is only supported by openai
   });
   const response = await model.invoke([
-    new SystemMessage(systemPrompt),
+    new SystemMessage(systemPrompt + encodeContextAsXML(context)),
     new HumanMessage(query)
   ]);
   const message = Array.isArray(response.content)

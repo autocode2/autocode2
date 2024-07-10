@@ -23,7 +23,7 @@ export default async function codeCommand(
   // Complete
   const context = await config.getContext();
   const resolvedPrompt = await config.getPrompt();
-  const response = await runCodeAgent(resolvedPrompt);
+  const response = await runCodeAgent({ query: resolvedPrompt, context });
 
   console.log(response.message);
   for (const action of response.actions) {

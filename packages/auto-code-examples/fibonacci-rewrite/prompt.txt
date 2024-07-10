@@ -1,0 +1,1 @@
+Remove the console.log statements, export the function and add jsdoc documentation
