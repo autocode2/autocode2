@@ -17,6 +17,7 @@ import { getModel } from "../llm/getModel";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
 import { sendMessage, thinking } from "../tools/messages";
 import { createFile, removeFile, replaceFile } from "../tools/filetools";
+import { Context } from "../context/context";
 
 export const systemPrompt = `You are an AI coding tool. Help the user with their coding tasks using the tools provided.
 
@@ -30,6 +31,12 @@ Use the following tools to perform the task:
 
 You may call multiple tools in a single response.  You may also call the same tool multiple times. Call all the necessary tools to complete the users request.
 `;
+
+export const encodeContextAsXML = (context: Context): string => {
+  return `<Context>${context.files
+    .map((file) => `<File path="${file.path}">${file.content}</File>`)
+    .join("")}</Context>`;
+};
 
 export const allTools: StructuredTool[] = [
   sendMessage,
@@ -49,7 +56,13 @@ export type CodeAgentResponse = {
   actions: ToolAction[];
 };
 
-export async function runCodeAgent(query: string) {
+export async function runCodeAgent({
+  query,
+  context
+}: {
+  query: string;
+  context: Context;
+}): Promise<CodeAgentResponse> {
   const model = getModel().bind({
     tools: allTools
     //tool_choice: "required", // required is only supported by openai

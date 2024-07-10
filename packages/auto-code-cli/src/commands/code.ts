@@ -21,6 +21,7 @@ export default async function codeCommand(
   // Apply
   // Verify -> Fix
   // Complete
+  const context = await config.getContext();
   const resolvedPrompt = await config.getPrompt();
   const response = await runCodeAgent(resolvedPrompt);
 
