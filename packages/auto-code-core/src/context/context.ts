@@ -2,6 +2,7 @@ import { readdir, readFile } from "fs/promises";
 import { exec } from "node:child_process";
 import { minimatch } from "minimatch";
 import { CommandConfig } from "../config";
+import { lstatSync } from "fs";
 
 export type ContextType = "git" | "fs";
 
@@ -52,8 +53,12 @@ export function getAllFiles({
   }
 }
 
-export function getFsFiles({ cwd }: { cwd: string }): Promise<string[]> {
-  return readdir(cwd, { recursive: true });
+export async function getFsFiles({ cwd }: { cwd: string }): Promise<string[]> {
+  const files = await readdir(cwd, { recursive: true });
+  return files.filter((file) => {
+    const stats = lstatSync(file);
+    return stats.isFile();
+  });
 }
 
 export function getGitFiles({ cwd }: { cwd: string }): Promise<string[]> {
