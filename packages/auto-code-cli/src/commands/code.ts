@@ -1,5 +1,4 @@
-import { CommandConfig, CodeAgent } from "@gingerhendrix/auto-code-core";
-import * as filesystem from "@gingerhendrix/auto-code-core/dist/actions/filesystem";
+import { CommandConfig, CodeAgent, filesystem } from "@autocode2/core";
 
 export type CodeCommandOptions = {
   inputFile?: string;

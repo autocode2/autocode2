@@ -1,5 +1,5 @@
 {
-  "name": "auto-code2",
+  "name": "@autocode2/monorepo",
   "version": "0.0.0-development",
   "description": "An automatic coding agent",
   "author": "Gareth Andrew <gingerhendrix@gmail.com>",
@@ -9,7 +9,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/gingerhendrix/auto-code2"
+    "url": "https://github.com/autocode2/autocode2"
   },
   "publishConfig": {
     "access": "public"
