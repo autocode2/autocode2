@@ -91,3 +91,9 @@ export function matchesFilter({
     !excludes.some((pattern) => minimatch(file, pattern)) &&
     (focus.length === 0 || focus.some((pattern) => minimatch(file, pattern)));
 }
+
+export const encodeContextAsXML = (context: Context): string => {
+  return `<Context>${context.files
+    .map((file) => `<File path="${file.path}">${file.content}</File>`)
+    .join("")}</Context>`;
+};

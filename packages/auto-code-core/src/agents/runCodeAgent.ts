@@ -49,6 +49,8 @@ export const allTools: StructuredTool[] = [
 
 export type ToolAction = {
   name: string;
+  // allow any, we can use zod to get the real type later
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   args: Record<string, any>;
 };
 

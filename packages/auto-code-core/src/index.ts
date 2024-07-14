@@ -1,4 +1,4 @@
-import { runCodeAgent } from "./agents/codeAgent";
+import { CodeAgent } from "./agents/CodeAgent";
 import { CommandConfig } from "./config";
 
-export { runCodeAgent, CommandConfig };
+export { CommandConfig, CodeAgent };
