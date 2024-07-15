@@ -8,7 +8,7 @@ export const createFile = new DynamicStructuredTool({
     filename: z.string(),
     contents: z.string()
   }),
-  func: async (_args, _config) => {
+  func: async () => {
     return await new Promise((resolve) => resolve("OK"));
   }
 });
@@ -20,7 +20,7 @@ export const replaceFile = new DynamicStructuredTool({
     filename: z.string(),
     contents: z.string()
   }),
-  func: async (_args, _config) => {
+  func: async () => {
     return await new Promise((resolve) => resolve("OK"));
   }
 });
@@ -31,7 +31,7 @@ export const removeFile = new DynamicStructuredTool({
   schema: z.object({
     filename: z.string()
   }),
-  func: async (_args, _config) => {
+  func: async () => {
     return await new Promise((resolve) => resolve("OK"));
   }
 });

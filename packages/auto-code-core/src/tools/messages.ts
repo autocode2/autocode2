@@ -7,7 +7,7 @@ export const sendMessage = new DynamicStructuredTool({
   schema: z.object({
     message: z.string()
   }),
-  func: async (_args, _config) => {
+  func: async () => {
     return await new Promise((resolve) => resolve("OK"));
   }
 });
@@ -18,7 +18,7 @@ export const thinking = new DynamicStructuredTool({
   schema: z.object({
     thoughts: z.string()
   }),
-  func: async (_args, _config) => {
+  func: async () => {
     return await new Promise((resolve) => resolve("OK"));
   }
 });

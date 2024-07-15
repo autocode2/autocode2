@@ -1,22 +1,11 @@
 import {
-  AIMessage,
-  BaseMessage,
   HumanMessage,
   MessageContentText,
-  OpenAIToolCall,
   SystemMessage
 } from "@langchain/core/messages";
 import { StructuredTool } from "@langchain/core/tools";
-import {
-  END,
-  MemorySaver,
-  START,
-  StateGraph,
-  StateGraphArgs
-} from "@langchain/langgraph";
 import { getModel } from "../llm/getModel";
-import { ToolNode } from "@langchain/langgraph/prebuilt";
-import { sendMessage, thinking } from "../tools/messages";
+import { sendMessage } from "../tools/messages";
 import { createFile, removeFile, replaceFile } from "../tools/filetools";
 import { Context } from "../context/context";
 
