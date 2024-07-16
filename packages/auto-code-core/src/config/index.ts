@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import { Context, context, ContextType } from "../context/context";
 import { getModel } from "../llm/getModel";
+import { xdgConfig } from "xdg-basedir";
 
 export type CommandConfigOptions = {
   contextType?: ContextType;
@@ -9,6 +10,10 @@ export type CommandConfigOptions = {
   inputFile?: string;
   model?: string;
   prompt?: string;
+};
+
+export type ConfigFile = {
+  env: Record<string, string>;
 };
 
 export class CommandConfig {
@@ -20,6 +25,26 @@ export class CommandConfig {
     } else {
       return this.opts.prompt || "";
     }
+  }
+
+  async loadConfigFile(): Promise<void> {
+    if (!xdgConfig) {
+      console.warn("No XDG_CONFIG_HOME found, skipping config file load");
+      return;
+    }
+    if (!(await fs.stat(`${xdgConfig}/auto-code/config.json`)).isFile()) {
+      await fs.writeFile(
+        `${xdgConfig}/auto-code/config.json`,
+        JSON.stringify({ env: {} })
+      );
+    }
+    const configFile = await fs.readFile(
+      `${xdgConfig}/auto-code/config.json`,
+      "utf8"
+    );
+    const config = JSON.parse(configFile) as ConfigFile;
+    // TODO: zod validation
+    Object.assign(process.env, config.env);
   }
 
   getWorkDir() {

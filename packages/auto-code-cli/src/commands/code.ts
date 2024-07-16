@@ -13,6 +13,7 @@ export default async function codeCommand(
     ...opts,
     prompt
   });
+  await config.loadConfigFile();
   // Get config
   // Do pre-checks
   // Build Context
