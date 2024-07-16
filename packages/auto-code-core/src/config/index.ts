@@ -1,5 +1,6 @@
 import fs from "fs/promises";
 import { Context, context, ContextType } from "../context/context";
+import { getModel } from "../llm/getModel";
 
 export type CommandConfigOptions = {
   contextType?: ContextType;
@@ -23,6 +24,10 @@ export class CommandConfig {
 
   getWorkDir() {
     return process.cwd();
+  }
+
+  getModel() {
+    return getModel(this.opts.model);
   }
 
   getContext(): Promise<Context> {

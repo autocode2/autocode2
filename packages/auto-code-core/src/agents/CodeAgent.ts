@@ -22,6 +22,7 @@ import {
   getLastAIMessage,
   getMessage
 } from "../llm/messageTools";
+import { CommandConfig } from "../config";
 
 export const systemPrompt = `You are an AI coding tool. Help the user with their coding tasks using the tools provided.
 
@@ -61,8 +62,10 @@ export class CodeAgent {
   listeners: {
     [key: string]: ((response: Events["response"]) => void | Promise<void>)[];
   };
+  config: CommandConfig;
 
-  constructor() {
+  constructor({ config }: { config: CommandConfig }) {
+    this.config = config;
     this.graph = this.buildGraph();
     this.toolsExecutor = new ToolNode<GraphState>(this.tools());
   }
@@ -117,11 +120,11 @@ export class CodeAgent {
   }
 
   async modelNode(state: GraphState): Promise<Partial<GraphState>> {
-    const model = getModel().bind({
+    const model = this.config.getModel().bind({
       tools: this.tools(),
       tool_choice: "auto"
     });
-    console.log("Invoking model with messages", state.messages);
+
     const response = await model.invoke([...state.messages]);
     return { messages: [response] };
   }
@@ -147,10 +150,7 @@ export class CodeAgent {
   isFinished(state: GraphState): "finished" | "continue" {
     const lastMessage = getLastAIMessage(state.messages);
     const toolCalls = lastMessage?.tool_calls || [];
-    console.log("***********************\nChecking if finished", {
-      lastMessage,
-      toolCalls
-    });
+
     return toolCalls.length === 0 ||
       toolCalls.every(this.isFinishedTool.bind(this))
       ? "finished"
