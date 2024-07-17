@@ -40,7 +40,7 @@ export type GraphState = {
   messages: BaseMessage[];
 };
 
-type GraphStateChannels = StateGraphArgs<GraphState>["channels"]
+type GraphStateChannels = StateGraphArgs<GraphState>["channels"];
 const graphStateChannels: GraphStateChannels = {
   messages: {
     value: (x?: BaseMessage[], y?: BaseMessage[]) => (x ?? []).concat(y ?? []),

@@ -18,7 +18,7 @@ export type ConfigFile = {
 };
 
 export class CommandConfig {
-  constructor(public opts: CommandConfigOptions) { }
+  constructor(public opts: CommandConfigOptions) {}
 
   async getPrompt() {
     if (this.opts.inputFile) {
