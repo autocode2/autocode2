@@ -1,7 +1,8 @@
 import {
   BaseMessage,
   HumanMessage,
-  SystemMessage
+  SystemMessage,
+  ToolMessage
 } from "@langchain/core/messages";
 import {
   END,
@@ -140,7 +141,18 @@ export class CodeAgent {
     if (actions.length === 0) {
       return {};
     }
-    return this.toolsExecutor.invoke(state);
+    const toolsResponse = (await this.toolsExecutor.invoke(state)) as {
+      messages: ToolMessage[];
+    };
+    // This is anthropic specific
+    const toolMessage = new HumanMessage({
+      content: toolsResponse.messages.map((m) => ({
+        type: "tool_result",
+        tool_use_id: m.tool_call_id,
+        content: m.content
+      }))
+    });
+    return { messages: [toolMessage] };
   }
 
   isFinishedTool(toolCall: ToolCall): boolean {
