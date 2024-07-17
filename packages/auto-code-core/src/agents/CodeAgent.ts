@@ -13,16 +13,15 @@ import {
 import { StructuredTool } from "langchain/tools";
 import { ToolCall } from "@langchain/core/messages/tool";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
-import { createFile, removeFile, replaceFile } from "../tools/filetools";
-import { sendMessage } from "../tools/messages";
-import { Context, encodeContextAsXML } from "../context/context";
-import { getModel } from "../llm/getModel";
+import { createFile, removeFile, replaceFile } from "../tools/filetools.js";
+import { sendMessage } from "../tools/messages.js";
+import { Context, encodeContextAsXML } from "../context/context.js";
 import {
   getAIResponse,
   getLastAIMessage,
   getMessage
-} from "../llm/messageTools";
-import { CommandConfig } from "../config";
+} from "../llm/messageTools.js";
+import { CommandConfig } from "../config/index.js";
 
 export const systemPrompt = `You are an AI coding tool. Help the user with their coding tasks using the tools provided.
 
@@ -41,7 +40,8 @@ export type GraphState = {
   messages: BaseMessage[];
 };
 
-const graphStateChannels: StateGraphArgs<GraphState>["channels"] = {
+type GraphStateChannels = StateGraphArgs<GraphState>["channels"]
+const graphStateChannels: GraphStateChannels = {
   messages: {
     value: (x?: BaseMessage[], y?: BaseMessage[]) => (x ?? []).concat(y ?? []),
     default: () => []
@@ -173,5 +173,5 @@ export class CodeAgent {
     return graph;
   }
 
-  graphStateChannels = graphStateChannels;
+  graphStateChannels: GraphStateChannels = graphStateChannels;
 }

@@ -1,7 +1,8 @@
 import fs from "fs/promises";
-import { Context, context, ContextType } from "../context/context";
-import { getModel } from "../llm/getModel";
+import { Context, context, ContextType } from "../context/context.js";
+import { getModel } from "../llm/getModel.js";
 import { xdgConfig } from "xdg-basedir";
+import { existsSync } from "node:fs";
 
 export type CommandConfigOptions = {
   contextType?: ContextType;
@@ -17,7 +18,7 @@ export type ConfigFile = {
 };
 
 export class CommandConfig {
-  constructor(public opts: CommandConfigOptions) {}
+  constructor(public opts: CommandConfigOptions) { }
 
   async getPrompt() {
     if (this.opts.inputFile) {
@@ -32,7 +33,8 @@ export class CommandConfig {
       console.warn("No XDG_CONFIG_HOME found, skipping config file load");
       return;
     }
-    if (!(await fs.stat(`${xdgConfig}/auto-code/config.json`)).isFile()) {
+    if (!existsSync(`${xdgConfig}/auto-code/config.json`)) {
+      await fs.mkdir(`${xdgConfig}/auto-code`, { recursive: true });
       await fs.writeFile(
         `${xdgConfig}/auto-code/config.json`,
         JSON.stringify({ env: {} })

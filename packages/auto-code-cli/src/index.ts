@@ -1,5 +1,5 @@
 import { program } from "@commander-js/extra-typings";
-import codeCommand from "./commands/code";
+import codeCommand from "./commands/code.js";
 
 program
   .command("code")

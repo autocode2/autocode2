@@ -1,8 +1,8 @@
 import { readdir, readFile } from "fs/promises";
 import { exec } from "node:child_process";
 import { minimatch } from "minimatch";
-import { CommandConfig } from "../config";
 import { lstatSync } from "fs";
+import { CommandConfig } from "../config/index.js";
 
 export type ContextType = "git" | "fs";
 

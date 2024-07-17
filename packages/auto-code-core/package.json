@@ -19,8 +19,10 @@
     "node": ">=16",
     "pnpm": ">=7.5.1"
   },
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "clean:build": "rimraf ./dist",

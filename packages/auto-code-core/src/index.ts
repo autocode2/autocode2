@@ -1,5 +1,5 @@
-import { CodeAgent } from "./agents/CodeAgent";
-import { CommandConfig } from "./config";
-import * as filesystem from "./actions/filesystem";
+import { CodeAgent } from "./agents/CodeAgent.js";
+import { CommandConfig } from "./config/index.js";
+import * as filesystem from "./actions/filesystem.js";
 
 export { CommandConfig, CodeAgent, filesystem };
