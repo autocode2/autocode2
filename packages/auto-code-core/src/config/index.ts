@@ -1,16 +1,17 @@
 import fs from "fs/promises";
 import { Context, context, ContextType } from "../context/context.js";
-import { getModel } from "../llm/getModel.js";
+import { getModel, getModelName, getModelCosts } from "../llm/getModel.js";
 import { xdgConfig } from "xdg-basedir";
 import { existsSync } from "node:fs";
 
 export type CommandConfigOptions = {
   contextType?: ContextType;
-  contextExcludes?: string[];
-  contextFocus?: string[];
   inputFile?: string;
   model?: string;
   prompt?: string;
+  include?: string[];
+  exclude?: string[];
+  excludeFrom?: string;
 };
 
 export type ConfigFile = {
@@ -20,12 +21,9 @@ export type ConfigFile = {
 export class CommandConfig {
   constructor(public opts: CommandConfigOptions) {}
 
-  async getPrompt() {
-    if (this.opts.inputFile) {
-      return await fs.readFile(this.opts.inputFile, "utf8");
-    } else {
-      return this.opts.prompt || "";
-    }
+  async init() {
+    await this.loadConfigFile();
+    await this.loadExcludeFrom();
   }
 
   async loadConfigFile(): Promise<void> {
@@ -49,8 +47,33 @@ export class CommandConfig {
     Object.assign(process.env, config.env);
   }
 
+  async loadExcludeFrom(): Promise<void> {
+    if (this.opts.excludeFrom) {
+      const excludeFile = await fs.readFile(this.opts.excludeFrom, "utf8");
+      this.opts.exclude = (this.opts.exclude || []).concat(
+        excludeFile.split("\n").map((line) => line.trim())
+      );
+    }
+  }
+
+  async getPrompt() {
+    if (this.opts.inputFile) {
+      return await fs.readFile(this.opts.inputFile, "utf8");
+    } else {
+      return this.opts.prompt || "";
+    }
+  }
+
   getWorkDir() {
     return process.cwd();
+  }
+
+  getModelCosts() {
+    return getModelCosts(this.opts.model);
+  }
+
+  getModelName() {
+    return getModelName(this.opts.model);
   }
 
   getModel() {
@@ -66,10 +89,10 @@ export class CommandConfig {
   }
 
   getContextFocus(): string[] | undefined {
-    return this.opts.contextFocus;
+    return this.opts.include || [];
   }
 
   getContextExcludes(): string[] | undefined {
-    return this.opts.contextExcludes;
+    return this.opts.exclude || [];
   }
 }

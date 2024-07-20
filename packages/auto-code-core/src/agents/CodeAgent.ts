@@ -64,6 +64,17 @@ export class CodeAgent {
     [key: string]: ((response: Events["response"]) => void | Promise<void>)[];
   };
   config: CommandConfig;
+  usage: {
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+    llm_calls: number;
+  } = {
+    input_tokens: 0,
+    output_tokens: 0,
+    total_tokens: 0,
+    llm_calls: 0
+  };
 
   constructor({ config }: { config: CommandConfig }) {
     this.config = config;
@@ -120,6 +131,18 @@ export class CodeAgent {
     return new SystemMessage(`${systemPrompt}\n${encodeContextAsXML(context)}`);
   }
 
+  updateUsage({
+    input_tokens,
+    output_tokens
+  }: {
+    input_tokens: number;
+    output_tokens: number;
+  }) {
+    this.usage.input_tokens += input_tokens;
+    this.usage.output_tokens += output_tokens;
+    this.usage.llm_calls += 1;
+  }
+
   async modelNode(state: GraphState): Promise<Partial<GraphState>> {
     const model = this.config.getModel().bind({
       tools: this.tools(),
@@ -127,6 +150,13 @@ export class CodeAgent {
     });
 
     const response = await model.invoke([...state.messages]);
+    if (response.usage_metadata) {
+      const { input_tokens, output_tokens } = response.usage_metadata;
+      this.updateUsage({ input_tokens, output_tokens });
+    } else {
+      console.log("No usage metadata found in response");
+    }
+
     return { messages: [response] };
   }
 

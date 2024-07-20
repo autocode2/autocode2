@@ -16,7 +16,16 @@ export const modelCosts = {
   "claude-3-5-sonnet-20240620": { input: 3.0, output: 15.0 },
   "claude-3-haiku-20240307": { input: 0.25, output: 1.25 },
   "gpt-4o": { input: 5.0, output: 15.0 }
-};
+} as Record<string, { input: number; output: number }>;
+
+export function getModelName(model: string = defaultModel) {
+  return modelAliases[model] || model;
+}
+
+export function getModelCosts(model: string = defaultModel) {
+  const name = modelAliases[model] || model;
+  return modelCosts[name] || { input: 0, output: 0 };
+}
 
 export function getModel(
   model: string = defaultModel

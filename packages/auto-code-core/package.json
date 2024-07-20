@@ -21,7 +21,8 @@
   },
   "type": "module",
   "exports": {
-    ".": "./dist/index.js"
+    ".": "./dist/index.js",
+    "./*": "./dist/*"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

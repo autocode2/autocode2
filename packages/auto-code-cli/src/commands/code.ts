@@ -1,8 +1,12 @@
 import { CommandConfig, CodeAgent, filesystem } from "@autocode2/core";
+import { modelCosts } from "@autocode2/core/llm/getModel.js";
 
 export type CodeCommandOptions = {
   inputFile?: string;
   model?: string;
+  exclude?: string[];
+  include?: string[];
+  excludeFrom?: string;
 };
 
 export default async function codeCommand(
@@ -13,7 +17,7 @@ export default async function codeCommand(
     ...opts,
     prompt
   });
-  await config.loadConfigFile();
+  await config.init();
   // Get config
   // Do pre-checks
   // Build Context
@@ -63,4 +67,17 @@ export default async function codeCommand(
   });
 
   await codeAgent.run({ query: resolvedPrompt, context });
+
+  const usage = codeAgent.usage;
+  const costs = config.getModelCosts();
+  const modelName = config.getModelName();
+  const inputCost = (usage.input_tokens * costs.input) / 1000000;
+  const outputCost = (usage.output_tokens * costs.output) / 1000000;
+  const totalCost = inputCost + outputCost;
+
+  console.log(`Model: ${modelName}`);
+  console.log(
+    `Tokens: ${usage.total_tokens} (${usage.input_tokens} input, ${usage.output_tokens} output)`
+  );
+  console.log(`Cost:  ${totalCost} (${inputCost} input, ${outputCost} output)`);
 }
