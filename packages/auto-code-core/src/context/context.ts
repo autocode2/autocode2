@@ -88,8 +88,9 @@ export function matchesFilter({
   focus?: string[];
 }) {
   return (file: string): boolean =>
-    !excludes.some((pattern) => minimatch(file, pattern)) &&
-    (focus.length === 0 || focus.some((pattern) => minimatch(file, pattern)));
+    !excludes.some((pattern) => minimatch(file, pattern, { dot: true })) &&
+    (focus.length === 0 ||
+      focus.some((pattern) => minimatch(file, pattern, { dot: true })));
 }
 
 export const encodeContextAsXML = (context: Context): string => {
