@@ -13,7 +13,8 @@ export async function createFile(
     await fs.mkdir(path.dirname(filePath), { recursive: true });
   }
   if (existsSync(filePath)) {
-    throw new Error(`File already exists: ${filePath}`);
+    //throw new Error(`File already exists: ${filePath}`);
+    console.warn(`File already exists: ${filePath}`);
   } else {
     await fs.writeFile(filePath, args.contents);
   }

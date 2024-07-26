@@ -28,11 +28,7 @@ export const systemPrompt = `You are an AI coding tool. Help the user with their
 
 You will be given information about the current project in a <Context></Context> element.  This will include the full contents of files in the project, using <File></File> elements.
 
-Use the following tools to perform the task:
- - message: Send a message to the user
- - replace-file: Replace the contents of a file, ensure that the full contents of the file are provided.
- - add-file: Add a new file
- - remove-file: Remove a file
+Use the tools to perform the task. Ensure that the content of files is complete and will run as-is.  Do not leave any placeholders or elide the code. Guess sensible defaults if required.
 
 You may call multiple tools in a single response.  You may also call the same tool multiple times. Call all the necessary tools to complete the users request.
 `;
@@ -174,6 +170,9 @@ export class CodeAgent {
     const toolsResponse = (await this.toolsExecutor.invoke(state)) as {
       messages: ToolMessage[];
     };
+    if (!this.config.getModelName().startsWith("claude")) {
+      return toolsResponse;
+    }
     // This is anthropic specific
     const toolMessage = new HumanMessage({
       content: toolsResponse.messages.map((m) => ({
