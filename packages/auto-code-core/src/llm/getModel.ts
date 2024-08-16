@@ -8,7 +8,9 @@ export const modelAliases: { [key: string]: string } = {
   sonnet: "claude-3-5-sonnet-20240620",
   haiku: "claude-3-haiku-20240307",
   gpt: "gpt-4o",
-  "gpt-mini": "gpt-4o-mini"
+  "gpt-4o": "gpt-4o",
+  "gpt-mini": "gpt-4o-mini",
+  "gpt-4o-mini": "gpt-4o-mini"
 };
 
 export const modelCosts = {
@@ -36,12 +38,17 @@ export function getModel(
   if (name.startsWith("claude")) {
     return new ChatAnthropic({
       model: name,
-      temperature: 0.0
+      temperature: 0.0,
+      maxTokens: 4096
+      //headers: {
+      //'anthropic-beta': 'max-tokens-3-5-sonnet-2024-07-15',
+      //}
     });
   } else {
     return new ChatOpenAI({
       model: name,
-      temperature: 0.0
+      temperature: 0.0,
+      maxTokens: name === "gpt-4o" ? 4096 : 16384
     });
   }
 }

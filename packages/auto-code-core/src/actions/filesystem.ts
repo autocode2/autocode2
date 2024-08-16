@@ -7,6 +7,10 @@ export async function createFile(
   args: { filename: string; contents: string },
   config: CommandConfig
 ) {
+  if (!args.contents) {
+    console.warn(`No contents provided for file: ${args.filename}`);
+    return;
+  }
   const workDir = config.getWorkDir();
   const filePath = path.join(workDir, args.filename);
   if (!existsSync(path.dirname(filePath))) {
@@ -15,15 +19,18 @@ export async function createFile(
   if (existsSync(filePath)) {
     //throw new Error(`File already exists: ${filePath}`);
     console.warn(`File already exists: ${filePath}`);
-  } else {
-    await fs.writeFile(filePath, args.contents);
   }
+  await fs.writeFile(filePath, args.contents);
 }
 
 export async function replaceFile(
   args: { filename: string; contents: string },
   config: CommandConfig
 ) {
+  if (!args.contents) {
+    console.warn(`No contents provided for file: ${args.filename}`);
+    return;
+  }
   const workDir = config.getWorkDir();
   const filePath = path.join(workDir, args.filename);
   if (!existsSync(filePath)) {

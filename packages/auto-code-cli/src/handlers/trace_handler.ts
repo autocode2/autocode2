@@ -6,6 +6,7 @@ export type Trace = {
   };
   context: string[];
   system: ReturnType<typeof CodeAgent.prototype.debugPrompt>;
+  prompt: string;
   responses: {
     message: string | null;
     actions: { name: string; args: Record<string, string> }[];
@@ -33,6 +34,7 @@ function traceableArgs(action: {
 
 export default function traceHandler(agent: CodeAgent, config: CommandConfig) {
   const trace: Trace = {
+    prompt: config.getPrompt(),
     config: {
       model: config.getModelName()
     },

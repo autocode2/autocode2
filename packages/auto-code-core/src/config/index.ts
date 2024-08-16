@@ -25,6 +25,9 @@ export class CommandConfig {
   async init() {
     await this.loadConfigFile();
     await this.loadExcludeFrom();
+    if (this.opts.inputFile) {
+      this.opts.prompt = await fs.readFile(this.opts.inputFile, "utf8");
+    }
   }
 
   async loadConfigFile(): Promise<void> {
@@ -57,12 +60,8 @@ export class CommandConfig {
     }
   }
 
-  async getPrompt() {
-    if (this.opts.inputFile) {
-      return await fs.readFile(this.opts.inputFile, "utf8");
-    } else {
-      return this.opts.prompt || "";
-    }
+  getPrompt() {
+    return this.opts.prompt || "";
   }
 
   getOutputFile() {

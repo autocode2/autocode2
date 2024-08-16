@@ -2,6 +2,7 @@ import {
   AIMessage,
   BaseMessage,
   HumanMessage,
+  mergeMessageRuns,
   SystemMessage,
   ToolMessage
 } from "@langchain/core/messages";
@@ -176,7 +177,24 @@ export class CodeAgent {
       tool_choice: "auto"
     });
 
-    const response = await model.invoke([...state.messages]);
+    let messages: BaseMessage[] = [];
+    let response: AIMessage = await model.invoke([...state.messages]);
+    const stopReason = response.response_metadata["stop_reason"] as string;
+
+    if (stopReason === "max_tokens") {
+      console.log("Max tokens reached, recovering response");
+      console.log("Original response", response.content);
+      response = new AIMessage({
+        content: response.content && response.content.slice(0, -1),
+        tool_calls: response.tool_calls && response.tool_calls.slice(0, -1)
+      });
+      //const humanMessage = new HumanMessage("The last message was cut off due to reaching the maximum token limit. Please continue.");
+      //const nextResponse = await model.invoke([...state.messages, partialResponse, humanMessage]);
+      //messages = mergeMessageRuns([response, nextResponse]);
+      //console.log("Joined response", messages);
+    }
+
+    messages = [response];
     await this.emit("ai_message", { message: response });
 
     if (response.usage_metadata) {
@@ -186,7 +204,7 @@ export class CodeAgent {
       console.log("No usage metadata found in response");
     }
 
-    return { messages: [response] };
+    return { messages };
   }
 
   async toolsNode(state: GraphState) {
