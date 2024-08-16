@@ -2,7 +2,6 @@ import {
   AIMessage,
   BaseMessage,
   HumanMessage,
-  mergeMessageRuns,
   SystemMessage,
   ToolMessage
 } from "@langchain/core/messages";
@@ -110,7 +109,7 @@ export class CodeAgent {
   }
 
   async run() {
-    const query = await this.config.getPrompt();
+    const query = this.config.getPrompt();
     const context = await this.config.getContext();
 
     const checkpointer = new MemorySaver();
