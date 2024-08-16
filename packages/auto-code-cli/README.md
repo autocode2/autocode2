@@ -1,27 +1,99 @@
-# Typescript example #1
+## Table of contents
 
-The first typescript example for the Monorepo example
+<!-- toc -->
 
-## License
+<!-- tocstop -->
 
-MIT License
+## Usage
 
-Copyright (c) 2023 Luke Baker
+<!-- usage -->
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+```sh-session
+$ npm install -g @autocode2/cli
+$ auto-code-cli COMMAND
+running command...
+$ auto-code-cli (--version)
+@autocode2/cli/0.0.0-development linux-x64 node-v22.1.0
+$ auto-code-cli --help [COMMAND]
+USAGE
+  $ auto-code-cli COMMAND
+...
+```
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+<!-- usagestop -->
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+## Commands
+
+<!-- commands -->
+
+- [`auto-code-cli code:run [PROMPT]`](#auto-code-cli-coderun-prompt)
+- [`auto-code-cli context:list`](#auto-code-cli-contextlist)
+- [`auto-code-cli test`](#auto-code-cli-test)
+
+## `auto-code-cli code:run [PROMPT]`
+
+Run the code agent
+
+```
+USAGE
+  $ auto-code-cli code:run [PROMPT] [--json] [-x <value>...] [--include <value>...] [--excludeFrom <value>]
+    [-i <value>] [-o <value>] [-m <value>]
+
+ARGUMENTS
+  PROMPT  Message to send to the code agent
+
+FLAGS
+  -i, --inputFile=<value>    Read message from file
+  -m, --model=<value>        [default: sonnet] Model name or alias to use (opus, sonnet, haiku)
+  -o, --outputFile=<value>   Write trace output to file
+  -x, --exclude=<value>...   exclude files matching pattern
+      --excludeFrom=<value>  exclude files matching patterns contained in file
+      --include=<value>...   include files matching pattern
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Run the code agent
+
+EXAMPLES
+  $ auto-code-cli code:run
+```
+
+_See code: [dist/commands/code/run.js](https://github.com/autocode2/autocode2/blob/v0.0.0-development/dist/commands/code/run.js)_
+
+## `auto-code-cli context:list`
+
+List the files sent to the LLM as context
+
+```
+USAGE
+  $ auto-code-cli context:list [--json] [-x <value>...] [--include <value>...] [--excludeFrom <value>]
+
+FLAGS
+  -x, --exclude=<value>...   exclude files matching pattern
+      --excludeFrom=<value>  exclude files matching patterns contained in file
+      --include=<value>...   include files matching pattern
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  List the files sent to the LLM as context
+
+EXAMPLES
+  $ auto-code-cli context:list
+```
+
+_See code: [dist/commands/context/list.js](https://github.com/autocode2/autocode2/blob/v0.0.0-development/dist/commands/context/list.js)_
+
+## `auto-code-cli test`
+
+```
+USAGE
+  $ auto-code-cli test
+```
+
+_See code: [dist/commands/test.js](https://github.com/autocode2/autocode2/blob/v0.0.0-development/dist/commands/test.js)_
+
+<!-- commandsstop -->

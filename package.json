@@ -32,7 +32,7 @@
     "format:fix": "prettier --write .",
     "test": "turbo run --parallel test",
     "typecheck": "turbo run --parallel typecheck",
-    "prepare": "husky install"
+    "prepare": "husky"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
