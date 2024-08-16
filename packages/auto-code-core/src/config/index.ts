@@ -7,6 +7,7 @@ import { existsSync } from "node:fs";
 export type CommandConfigOptions = {
   contextType?: ContextType;
   inputFile?: string;
+  outputFile?: string;
   model?: string;
   prompt?: string;
   include?: string[];
@@ -64,6 +65,9 @@ export class CommandConfig {
     }
   }
 
+  getOutputFile() {
+    return this.opts.outputFile;
+  }
   getWorkDir() {
     return process.cwd();
   }

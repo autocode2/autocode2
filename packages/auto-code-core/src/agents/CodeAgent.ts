@@ -1,4 +1,5 @@
 import {
+  AIMessage,
   BaseMessage,
   HumanMessage,
   SystemMessage,
@@ -23,6 +24,7 @@ import {
   getMessage
 } from "../llm/messageTools.js";
 import { CommandConfig } from "../config/index.js";
+import zodToJSONSchema from "zod-to-json-schema";
 
 export const systemPrompt = `You are an AI coding tool. Help the user with their coding tasks using the tools provided.
 
@@ -46,7 +48,20 @@ const graphStateChannels: GraphStateChannels = {
 };
 
 export type Events = {
-  response: { message: string | null; actions: ToolCall[] };
+  response: {
+    message: string | null;
+    actions: ToolCall[];
+    usage: { input_tokens?: number; output_tokens?: number };
+  };
+  ai_message: { message: AIMessage };
+  start: { agent: CodeAgent };
+  end: { agent: CodeAgent };
+};
+
+export type EventTypes = keyof Events;
+
+type Listeners = {
+  [key in EventTypes]: ((response: Events[key]) => void | Promise<void>)[];
 };
 
 export class CodeAgent {
@@ -56,9 +71,7 @@ export class CodeAgent {
     "__start__" | "model" | "tools"
   >;
   toolsExecutor: ToolNode<GraphState>;
-  listeners: {
-    [key: string]: ((response: Events["response"]) => void | Promise<void>)[];
-  };
+  listeners: Listeners;
   config: CommandConfig;
   usage: {
     input_tokens: number;
@@ -78,16 +91,16 @@ export class CodeAgent {
     this.toolsExecutor = new ToolNode<GraphState>(this.tools());
   }
 
-  on(
-    event: "response",
-    listener: (response: Events["response"]) => void | Promise<void>
+  on<T extends EventTypes>(
+    event: T,
+    listener: (response: Events[T]) => void | Promise<void>
   ) {
     this.listeners = this.listeners || {};
     this.listeners[event] = this.listeners[event] || [];
     this.listeners[event].push(listener);
   }
 
-  async emit(event: "response", response: Events["response"]) {
+  async emit<T extends EventTypes>(event: T, response: Events[T]) {
     this.listeners = this.listeners || {};
     const listeners = this.listeners[event] || [];
     for (const listener of listeners) {
@@ -95,7 +108,10 @@ export class CodeAgent {
     }
   }
 
-  async run({ query, context }: { query: string; context: Context }) {
+  async run() {
+    const query = await this.config.getPrompt();
+    const context = await this.config.getContext();
+
     const checkpointer = new MemorySaver();
     const compiledGraph = this.graph
       .compile({
@@ -110,7 +126,11 @@ export class CodeAgent {
     const input = {
       messages: [this.systemPrompt({ context }), new HumanMessage(query)]
     };
+    await this.emit("start", { agent: this });
+
     (await compiledGraph.invoke(input)) as GraphState;
+
+    await this.emit("end", { agent: this });
   }
 
   tools(): StructuredTool[] {
@@ -121,6 +141,17 @@ export class CodeAgent {
       removeFile,
       replaceFile
     ];
+  }
+
+  debugPrompt() {
+    return {
+      systemPrompt,
+      tools: this.tools().map((tool) => ({
+        name: tool.name,
+        description: tool.description,
+        schema: zodToJSONSchema(tool.schema)
+      }))
+    };
   }
 
   systemPrompt({ context }: { context: Context }): SystemMessage {
@@ -146,6 +177,8 @@ export class CodeAgent {
     });
 
     const response = await model.invoke([...state.messages]);
+    await this.emit("ai_message", { message: response });
+
     if (response.usage_metadata) {
       const { input_tokens, output_tokens } = response.usage_metadata;
       this.updateUsage({ input_tokens, output_tokens });
@@ -161,8 +194,13 @@ export class CodeAgent {
 
     const message = getMessage(response);
     const actions = response.tool_calls || [];
+    const { input_tokens, output_tokens } = response.usage_metadata || {};
 
-    await this.emit("response", { message, actions });
+    await this.emit("response", {
+      message,
+      actions,
+      usage: { input_tokens, output_tokens }
+    });
 
     if (actions.length === 0) {
       return {};

@@ -36,9 +36,10 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@commander-js/extra-typings": "^12.1.0",
     "@autocode2/core": "workspace:*",
+    "@commander-js/extra-typings": "^12.1.0",
     "commander": "^12.1.0",
-    "tiny-invariant": "^1.3.3"
+    "tiny-invariant": "^1.3.3",
+    "zod-to-json-schema": "^3.23.2"
   }
 }

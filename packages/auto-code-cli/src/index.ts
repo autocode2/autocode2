@@ -13,6 +13,7 @@ program
     "Exclude files matching patterns contained in file"
   )
   .option("-i, --input-file <file>", "Read message from file")
+  .option("-o, --output-file <file>", "Write trace output to file")
   .option(
     "-m, --model <name>",
     "Model name or alias to use (opus, sonnet, haiku)",

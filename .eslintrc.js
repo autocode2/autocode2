@@ -13,5 +13,8 @@ module.exports = {
   parserOptions: {
     tsconfigRootDir: __dirname,
     project: "./tsconfig.json"
+  },
+  rules: {
+    "@typescript-eslint/require-await": "off"
   }
 };
