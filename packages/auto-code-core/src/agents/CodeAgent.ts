@@ -111,8 +111,8 @@ export class CodeAgent {
   async run() {
     const query = this.config.getPrompt();
     const context = await this.config.getContext();
+    const checkpointer = this.config.getCheckpointer();
 
-    const checkpointer = new MemorySaver();
     const compiledGraph = this.graph
       .compile({
         checkpointer

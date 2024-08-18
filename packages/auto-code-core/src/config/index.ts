@@ -3,6 +3,7 @@ import { Context, context, ContextType } from "../context/context.js";
 import { getModel, getModelName, getModelCosts } from "../llm/getModel.js";
 import { xdgConfig } from "xdg-basedir";
 import { existsSync } from "node:fs";
+import { BaseCheckpointSaver, MemorySaver } from "@langchain/langgraph";
 
 export type CommandConfigOptions = {
   contextType?: ContextType;
@@ -97,5 +98,9 @@ export class CommandConfig {
 
   getContextExcludes(): string[] | undefined {
     return this.opts.exclude || [];
+  }
+
+  getCheckpointer(): BaseCheckpointSaver {
+    return new MemorySaver();
   }
 }
