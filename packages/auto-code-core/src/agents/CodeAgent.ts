@@ -120,7 +120,7 @@ export class CodeAgent {
       .withConfig({
         recursionLimit: 5,
         configurable: {
-          threadId: "1"
+          thread_id: this.config.getThreadId()
         }
       });
     const input = {

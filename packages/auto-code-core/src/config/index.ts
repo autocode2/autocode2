@@ -1,9 +1,16 @@
 import fs from "fs/promises";
 import { Context, context, ContextType } from "../context/context.js";
 import { getModel, getModelName, getModelCosts } from "../llm/getModel.js";
-import { xdgConfig } from "xdg-basedir";
+import { xdgConfig, xdgData } from "xdg-basedir";
 import { existsSync } from "node:fs";
 import { BaseCheckpointSaver, MemorySaver } from "@langchain/langgraph";
+import { SqliteSaver } from "@langchain/langgraph/checkpoint/sqlite";
+import { v4 as uuidv4 } from "uuid";
+
+import path from "path";
+import { CheckpointSaver } from "../db/CheckpointSaver.js";
+
+export const XDG_NAME = "auto-code";
 
 export type CommandConfigOptions = {
   contextType?: ContextType;
@@ -14,6 +21,9 @@ export type CommandConfigOptions = {
   include?: string[];
   exclude?: string[];
   excludeFrom?: string;
+  dataDir?: string;
+  configDir?: string;
+  checkpointer?: "memory" | "sqlite";
 };
 
 export type ConfigFile = {
@@ -21,33 +31,54 @@ export type ConfigFile = {
 };
 
 export class CommandConfig {
+  private dataDir: string;
+  private configDir: string;
+  private threadId: string;
+
   constructor(public opts: CommandConfigOptions) {}
 
   async init() {
+    await this.setupDirectories();
     await this.loadConfigFile();
     await this.loadExcludeFrom();
     if (this.opts.inputFile) {
       this.opts.prompt = await fs.readFile(this.opts.inputFile, "utf8");
     }
+    this.threadId = uuidv4();
+  }
+
+  async setupDirectories() {
+    if (!this.opts.dataDir) {
+      if (!xdgData) {
+        throw new Error(
+          "No XDG_DATA_HOME found, data directory can't be created"
+        );
+      }
+      this.dataDir = this.opts.dataDir = path.join(xdgData, XDG_NAME);
+    }
+    await fs.mkdir(this.dataDir, { recursive: true });
+
+    if (!this.opts.configDir) {
+      if (!xdgConfig) {
+        throw new Error(
+          "No XDG_CONFIG_HOME found, config directory can't be created"
+        );
+      }
+      this.configDir = this.opts.configDir = path.join(xdgConfig, XDG_NAME);
+    }
+    await fs.mkdir(this.configDir, { recursive: true });
   }
 
   async loadConfigFile(): Promise<void> {
-    if (!xdgConfig) {
-      console.warn("No XDG_CONFIG_HOME found, skipping config file load");
-      return;
+    const configFile = path.join(this.configDir, "config.json");
+    if (!existsSync(configFile)) {
+      await fs.writeFile(configFile, JSON.stringify({ env: {} }));
     }
-    if (!existsSync(`${xdgConfig}/auto-code/config.json`)) {
-      await fs.mkdir(`${xdgConfig}/auto-code`, { recursive: true });
-      await fs.writeFile(
-        `${xdgConfig}/auto-code/config.json`,
-        JSON.stringify({ env: {} })
-      );
-    }
-    const configFile = await fs.readFile(
+    const configJson = await fs.readFile(
       `${xdgConfig}/auto-code/config.json`,
       "utf8"
     );
-    const config = JSON.parse(configFile) as ConfigFile;
+    const config = JSON.parse(configJson) as ConfigFile;
     // TODO: zod validation
     Object.assign(process.env, config.env);
   }
@@ -68,6 +99,7 @@ export class CommandConfig {
   getOutputFile() {
     return this.opts.outputFile;
   }
+
   getWorkDir() {
     return process.cwd();
   }
@@ -78,6 +110,10 @@ export class CommandConfig {
 
   getModelName() {
     return getModelName(this.opts.model);
+  }
+
+  getThreadId() {
+    return this.threadId;
   }
 
   getModel() {
@@ -101,6 +137,10 @@ export class CommandConfig {
   }
 
   getCheckpointer(): BaseCheckpointSaver {
-    return new MemorySaver();
+    if (this.opts.checkpointer === "memory") {
+      return new MemorySaver();
+    }
+    const checkpointDb = path.join(this.dataDir, "checkpoints.db");
+    return CheckpointSaver.fromConnString(checkpointDb);
   }
 }
