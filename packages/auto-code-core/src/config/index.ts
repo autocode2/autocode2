@@ -21,6 +21,7 @@ export type CommandConfigOptions = {
   dataDir?: string;
   configDir?: string;
   checkpointer?: "memory" | "sqlite";
+  thread?: string;
 };
 
 export type ConfigFile = {
@@ -87,6 +88,10 @@ export class CommandConfig {
         excludeFile.split("\n").map((line) => line.trim())
       );
     }
+  }
+
+  getThread() {
+    return this.opts.thread;
   }
 
   getPrompt() {

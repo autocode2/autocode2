@@ -64,7 +64,7 @@ export class Database {
 
   startRun(c: CommandConfig): RunInfo {
     const run_id = uuidv4();
-    const thread_id = uuidv4();
+    const thread_id = c.getThread() || uuidv4();
     const workdir = c.getWorkDir();
     const config = JSON.stringify(c.toJSON());
 

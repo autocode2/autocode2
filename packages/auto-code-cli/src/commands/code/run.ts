@@ -20,6 +20,10 @@ export default class CodeRun extends BaseCommand<typeof CodeRun> {
   };
 
   static override flags = {
+    thread: Flags.string({
+      char: "t",
+      description: "Thread ID to use"
+    }),
     inputFile: Flags.string({
       char: "i",
       description: "Read message from file",
@@ -40,10 +44,11 @@ export default class CodeRun extends BaseCommand<typeof CodeRun> {
 
   protected override getConfigOptions(): CommandConfigOptions {
     const { prompt } = this.args;
-    const { inputFile, outputFile, model } = this.flags;
+    const { inputFile, outputFile, model, thread } = this.flags;
 
     return {
       ...super.getConfigOptions(),
+      thread,
       prompt,
       inputFile,
       outputFile,
