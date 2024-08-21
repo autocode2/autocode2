@@ -5,13 +5,7 @@ import {
   SystemMessage,
   ToolMessage
 } from "@langchain/core/messages";
-import {
-  END,
-  MemorySaver,
-  START,
-  StateGraph,
-  StateGraphArgs
-} from "@langchain/langgraph";
+import { END, START, StateGraph, StateGraphArgs } from "@langchain/langgraph";
 import { StructuredTool } from "langchain/tools";
 import { ToolCall } from "@langchain/core/messages/tool";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
@@ -24,7 +18,7 @@ import {
   getMessage
 } from "../llm/messageTools.js";
 import { CommandConfig } from "../config/index.js";
-import zodToJSONSchema from "zod-to-json-schema";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
 export const systemPrompt = `You are an AI coding tool. Help the user with their coding tasks using the tools provided.
 
@@ -54,7 +48,7 @@ export type Events = {
     usage: { input_tokens?: number; output_tokens?: number };
   };
   ai_message: { message: AIMessage };
-  start: { agent: CodeAgent };
+  start: { agent: CodeAgent; run_id: string; thread_id: string };
   end: { agent: CodeAgent };
 };
 
@@ -109,9 +103,13 @@ export class CodeAgent {
   }
 
   async run() {
+    const db = this.config.getDatabase();
+
     const query = this.config.getPrompt();
     const context = await this.config.getContext();
-    const checkpointer = this.config.getCheckpointer();
+    const checkpointer = db.checkpointSaver();
+
+    const { run_id, thread_id } = db.startRun(this.config);
 
     const compiledGraph = this.graph
       .compile({
@@ -120,13 +118,13 @@ export class CodeAgent {
       .withConfig({
         recursionLimit: 5,
         configurable: {
-          thread_id: this.config.getThreadId()
+          thread_id
         }
       });
     const input = {
       messages: [this.systemPrompt({ context }), new HumanMessage(query)]
     };
-    await this.emit("start", { agent: this });
+    await this.emit("start", { agent: this, run_id, thread_id });
 
     (await compiledGraph.invoke(input)) as GraphState;
 
@@ -149,7 +147,7 @@ export class CodeAgent {
       tools: this.tools().map((tool) => ({
         name: tool.name,
         description: tool.description,
-        schema: zodToJSONSchema(tool.schema)
+        schema: zodToJsonSchema(tool.schema)
       }))
     };
   }

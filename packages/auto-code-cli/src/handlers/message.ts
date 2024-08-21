@@ -4,7 +4,8 @@ export default function messageHandler(
   agent: CodeAgent,
   config: CommandConfig
 ) {
-  agent.on("start", async () => {
+  agent.on("start", async ({ run_id, thread_id }) => {
+    console.log(`Starting run: ${run_id} - ${thread_id}`);
     const context = await config.getContext();
     console.log("Context: ");
     context.files.forEach((file) => {

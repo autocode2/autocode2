@@ -4,11 +4,11 @@ import { getModel, getModelName, getModelCosts } from "../llm/getModel.js";
 import { xdgConfig, xdgData } from "xdg-basedir";
 import { existsSync } from "node:fs";
 import { BaseCheckpointSaver, MemorySaver } from "@langchain/langgraph";
-import { SqliteSaver } from "@langchain/langgraph/checkpoint/sqlite";
 import { v4 as uuidv4 } from "uuid";
 
 import path from "path";
 import { CheckpointSaver } from "../db/CheckpointSaver.js";
+import { Database } from "../db/Database.js";
 
 export const XDG_NAME = "auto-code";
 
@@ -34,6 +34,7 @@ export class CommandConfig {
   private dataDir: string;
   private configDir: string;
   private threadId: string;
+  private _database: Database;
 
   constructor(public opts: CommandConfigOptions) {}
 
@@ -142,5 +143,15 @@ export class CommandConfig {
     }
     const checkpointDb = path.join(this.dataDir, "checkpoints.db");
     return CheckpointSaver.fromConnString(checkpointDb);
+  }
+
+  getDatabase() {
+    const dbPath = path.join(this.dataDir, "db.sqlite");
+    this._database = Database.fromConnString(dbPath);
+    return this._database;
+  }
+
+  toJSON() {
+    return { ...this.opts };
   }
 }

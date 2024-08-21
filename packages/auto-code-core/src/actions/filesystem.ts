@@ -1,7 +1,7 @@
 import fs from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { CommandConfig } from "../config";
+import { CommandConfig } from "../config/index.js";
 
 export async function createFile(
   args: { filename: string; contents: string },

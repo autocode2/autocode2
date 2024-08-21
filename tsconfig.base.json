@@ -8,8 +8,8 @@
     "noEmit": true,
 
     "lib": ["es2023"],
-    "module": "esnext",
-    "moduleResolution": "bundler",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
 
     /* Strict Type-Checking Options */
     "noImplicitAny": true,

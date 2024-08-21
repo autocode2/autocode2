@@ -8,6 +8,7 @@ import {
   SerializerProtocol
 } from "@langchain/langgraph";
 import { load } from "@langchain/core/load";
+import { CheckpointTable, Row } from "./CheckpointTable.js";
 
 const Serializer: SerializerProtocol<Checkpoint> = {
   stringify(obj) {
@@ -19,16 +20,9 @@ const Serializer: SerializerProtocol<Checkpoint> = {
 };
 
 // snake_case is used to match Python implementation
-interface Row {
-  checkpoint: string;
-  metadata: string;
-  parent_id?: string;
-  thread_id: string;
-  checkpoint_id: string;
-}
 
 export class CheckpointSaver extends BaseCheckpointSaver {
-  db: DatabaseType;
+  table: CheckpointTable;
 
   protected isSetup: boolean;
 
@@ -37,7 +31,7 @@ export class CheckpointSaver extends BaseCheckpointSaver {
     serde: SerializerProtocol<Checkpoint> = Serializer
   ) {
     super(serde);
-    this.db = db;
+    this.table = new CheckpointTable(db);
     this.isSetup = false;
   }
 
@@ -49,22 +43,7 @@ export class CheckpointSaver extends BaseCheckpointSaver {
     if (this.isSetup) {
       return;
     }
-
-    try {
-      this.db.pragma("journal_mode=WAL");
-      this.db.exec(`
-CREATE TABLE IF NOT EXISTS checkpoints (
-  thread_id TEXT NOT NULL,
-  checkpoint_id TEXT NOT NULL,
-  parent_id TEXT,
-  checkpoint BLOB,
-  metadata BLOB,
-  PRIMARY KEY (thread_id, checkpoint_id)
-);`);
-    } catch (error) {
-      console.log("Error creating checkpoints table", error);
-      throw error;
-    }
+    this.table.setup();
 
     this.isSetup = true;
   }
@@ -76,11 +55,7 @@ CREATE TABLE IF NOT EXISTS checkpoints (
 
     if (checkpoint_id) {
       try {
-        const row: Row = this.db
-          .prepare(
-            `SELECT checkpoint, parent_id, metadata FROM checkpoints WHERE thread_id = ? AND checkpoint_id = ?`
-          )
-          .get(thread_id, checkpoint_id) as Row;
+        const row = this.table.getRow(thread_id, checkpoint_id);
 
         if (row) {
           return {
@@ -104,11 +79,7 @@ CREATE TABLE IF NOT EXISTS checkpoints (
         throw error;
       }
     } else {
-      const row: Row = this.db
-        .prepare(
-          `SELECT thread_id, checkpoint_id, parent_id, checkpoint, metadata FROM checkpoints WHERE thread_id = ? ORDER BY checkpoint_id DESC LIMIT 1`
-        )
-        .get(thread_id) as Row;
+      const row = this.table.getLatestRow(thread_id);
 
       if (row) {
         return {
@@ -144,19 +115,13 @@ CREATE TABLE IF NOT EXISTS checkpoints (
   ): AsyncGenerator<CheckpointTuple> {
     this.setup();
     const thread_id = this.getThreadId(config);
-    let sql = `SELECT thread_id, checkpoint_id, parent_id, checkpoint, metadata FROM checkpoints WHERE thread_id = ? ${
-      before ? "AND checkpoint_id < ?" : ""
-    } ORDER BY checkpoint_id DESC`;
-    if (limit) {
-      sql += ` LIMIT ${limit}`;
-    }
-    const args = [
-      thread_id,
-      before?.configurable?.checkpoint_id as string | undefined
-    ].filter(Boolean);
+    const options = {
+      limit,
+      before: before?.configurable?.checkpoint_id as string | undefined
+    };
 
     try {
-      const rows: Row[] = this.db.prepare(sql).all(...args) as Row[];
+      const rows: Row[] = this.table.getAllRows(thread_id, options);
 
       if (rows) {
         for (const row of rows) {
@@ -196,19 +161,14 @@ CREATE TABLE IF NOT EXISTS checkpoints (
     this.setup();
 
     try {
-      const row = [
-        this.getThreadId(config),
-        checkpoint.id,
-        this.getCheckpointId(config),
-        this.serde.stringify(checkpoint),
-        this.serde.stringify(metadata)
-      ];
-
-      this.db
-        .prepare(
-          `INSERT OR REPLACE INTO checkpoints (thread_id, checkpoint_id, parent_id, checkpoint, metadata) VALUES (?, ?, ?, ?, ?)`
-        )
-        .run(...row);
+      const row = {
+        thread_id: this.getThreadId(config),
+        checkpoint_id: checkpoint.id,
+        parent_id: this.getCheckpointId(config),
+        checkpoint: this.serde.stringify(checkpoint),
+        metadata: this.serde.stringify(metadata)
+      };
+      this.table.insertRow(row);
     } catch (error) {
       console.log("Error saving checkpoint", error);
       throw error;
@@ -222,8 +182,12 @@ CREATE TABLE IF NOT EXISTS checkpoints (
     };
   }
 
-  private getThreadId(config: RunnableConfig): string | undefined {
-    return config.configurable?.thread_id as string | undefined;
+  private getThreadId(config: RunnableConfig): string {
+    const thread_id = config.configurable?.thread_id as string | undefined;
+    if (!thread_id) {
+      throw new Error("Thread ID not set");
+    }
+    return thread_id;
   }
 
   private getCheckpointId(config: RunnableConfig): string | undefined {
