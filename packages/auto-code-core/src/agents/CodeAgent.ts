@@ -33,6 +33,13 @@ export type GraphState = {
   messages: BaseMessage[];
 };
 
+export type UsageMetadata = {
+  input_tokens: number;
+  output_tokens: number;
+  cache_creation_input_tokens: number;
+  cache_read_input_tokens: number;
+};
+
 type GraphStateChannels = StateGraphArgs<GraphState>["channels"];
 const graphStateChannels: GraphStateChannels = {
   messages: {
@@ -67,15 +74,13 @@ export class CodeAgent {
   toolsExecutor: ToolNode<GraphState>;
   listeners: Listeners;
   config: CommandConfig;
-  usage: {
-    input_tokens: number;
-    output_tokens: number;
-    total_tokens: number;
+  usage: UsageMetadata & {
     llm_calls: number;
   } = {
     input_tokens: 0,
     output_tokens: 0,
-    total_tokens: 0,
+    cache_creation_input_tokens: 0,
+    cache_read_input_tokens: 0,
     llm_calls: 0
   };
   context: Context;
@@ -153,18 +158,27 @@ export class CodeAgent {
   }
 
   systemPrompt({ context }: { context: Context }): SystemMessage {
-    return new SystemMessage(`${systemPrompt}\n${encodeContextAsXML(context)}`);
+    return new SystemMessage({
+      content: [
+        {
+          type: "text",
+          text: `${systemPrompt}\n${encodeContextAsXML(context)}`,
+          cache_control: { type: "ephemeral" }
+        }
+      ]
+    });
   }
 
   updateUsage({
     input_tokens,
-    output_tokens
-  }: {
-    input_tokens: number;
-    output_tokens: number;
-  }) {
+    output_tokens,
+    cache_creation_input_tokens,
+    cache_read_input_tokens
+  }: UsageMetadata) {
     this.usage.input_tokens += input_tokens;
     this.usage.output_tokens += output_tokens;
+    this.usage.cache_creation_input_tokens += cache_creation_input_tokens;
+    this.usage.cache_read_input_tokens += cache_read_input_tokens;
     this.usage.llm_calls += 1;
   }
 
@@ -198,9 +212,20 @@ export class CodeAgent {
     messages = [response];
     await this.emit("ai_message", { message: response });
 
-    if (response.usage_metadata) {
-      const { input_tokens, output_tokens } = response.usage_metadata;
-      this.updateUsage({ input_tokens, output_tokens });
+    const usage_metadata = response.response_metadata.usage as UsageMetadata;
+    if (usage_metadata) {
+      const {
+        input_tokens,
+        output_tokens,
+        cache_creation_input_tokens,
+        cache_read_input_tokens
+      } = usage_metadata;
+      this.updateUsage({
+        input_tokens,
+        output_tokens,
+        cache_read_input_tokens,
+        cache_creation_input_tokens
+      });
     } else {
       console.log("No usage metadata found in response");
     }
