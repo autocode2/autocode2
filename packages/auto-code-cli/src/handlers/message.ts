@@ -35,6 +35,9 @@ export default function messageHandler(
       console.log(response.message);
     }
     for (const action of response.actions) {
+      if (action.name === "message") {
+        console.log(action.args.message);
+      }
       if (action.name === "thinking") {
         console.log("Thinking... ", action.args);
       }
