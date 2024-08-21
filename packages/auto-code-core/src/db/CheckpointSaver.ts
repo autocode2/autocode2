@@ -1,4 +1,4 @@
-import Database, { Database as DatabaseType } from "better-sqlite3";
+import { Database as DatabaseType } from "better-sqlite3";
 import { RunnableConfig } from "@langchain/core/runnables";
 import {
   BaseCheckpointSaver,
@@ -28,15 +28,11 @@ export class CheckpointSaver extends BaseCheckpointSaver {
 
   constructor(
     db: DatabaseType,
-    serde: SerializerProtocol<Checkpoint> = Serializer
+    public run_id: string
   ) {
-    super(serde);
+    super(Serializer);
     this.table = new CheckpointTable(db);
     this.isSetup = false;
-  }
-
-  static fromConnString(connStringOrLocalPath: string): CheckpointSaver {
-    return new CheckpointSaver(new Database(connStringOrLocalPath));
   }
 
   private setup(): void {
@@ -162,6 +158,7 @@ export class CheckpointSaver extends BaseCheckpointSaver {
 
     try {
       const row = {
+        run_id: this.run_id,
         thread_id: this.getThreadId(config),
         checkpoint_id: checkpoint.id,
         parent_id: this.getCheckpointId(config),

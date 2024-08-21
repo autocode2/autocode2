@@ -3,11 +3,8 @@ import { Context, context, ContextType } from "../context/context.js";
 import { getModel, getModelName, getModelCosts } from "../llm/getModel.js";
 import { xdgConfig, xdgData } from "xdg-basedir";
 import { existsSync } from "node:fs";
-import { BaseCheckpointSaver, MemorySaver } from "@langchain/langgraph";
-import { v4 as uuidv4 } from "uuid";
 
 import path from "path";
-import { CheckpointSaver } from "../db/CheckpointSaver.js";
 import { Database } from "../db/Database.js";
 
 export const XDG_NAME = "auto-code";
@@ -45,7 +42,6 @@ export class CommandConfig {
     if (this.opts.inputFile) {
       this.opts.prompt = await fs.readFile(this.opts.inputFile, "utf8");
     }
-    this.threadId = uuidv4();
   }
 
   async setupDirectories() {
@@ -135,14 +131,6 @@ export class CommandConfig {
 
   getContextExcludes(): string[] | undefined {
     return this.opts.exclude || [];
-  }
-
-  getCheckpointer(): BaseCheckpointSaver {
-    if (this.opts.checkpointer === "memory") {
-      return new MemorySaver();
-    }
-    const checkpointDb = path.join(this.dataDir, "checkpoints.db");
-    return CheckpointSaver.fromConnString(checkpointDb);
   }
 
   getDatabase() {

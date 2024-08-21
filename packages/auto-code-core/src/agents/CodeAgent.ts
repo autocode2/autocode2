@@ -107,9 +107,8 @@ export class CodeAgent {
 
     const query = this.config.getPrompt();
     const context = await this.config.getContext();
-    const checkpointer = db.checkpointSaver();
-
     const { run_id, thread_id } = db.startRun(this.config);
+    const checkpointer = db.checkpointSaver(run_id);
 
     const compiledGraph = this.graph
       .compile({

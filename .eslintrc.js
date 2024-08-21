@@ -15,6 +15,7 @@ module.exports = {
     project: "./tsconfig.json"
   },
   rules: {
-    "@typescript-eslint/require-await": "off"
+    "@typescript-eslint/require-await": "off",
+    "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }]
   }
 };

@@ -5,6 +5,7 @@ export interface Row {
   metadata: string;
   parent_id?: string;
   thread_id: string;
+  run_id: string;
   checkpoint_id: string;
 }
 
@@ -15,6 +16,7 @@ export class CheckpointTable {
     try {
       this.db.exec(`
 CREATE TABLE IF NOT EXISTS checkpoints (
+  run_id TEXT NOT NULL,
   thread_id TEXT NOT NULL,
   checkpoint_id TEXT NOT NULL,
   parent_id TEXT,
@@ -24,6 +26,15 @@ CREATE TABLE IF NOT EXISTS checkpoints (
 );`);
     } catch (error) {
       console.log("Error creating checkpoints table", error);
+      throw error;
+    }
+  }
+
+  drop(): void {
+    try {
+      this.db.exec(`DROP TABLE IF EXISTS checkpoints;`);
+    } catch (error) {
+      console.log("Error dropping checkpoints table", error);
       throw error;
     }
   }
@@ -60,6 +71,7 @@ CREATE TABLE IF NOT EXISTS checkpoints (
 
   insertRow(row: Row): void {
     const data = [
+      row.run_id,
       row.thread_id,
       row.checkpoint_id,
       row.parent_id,
@@ -69,7 +81,7 @@ CREATE TABLE IF NOT EXISTS checkpoints (
 
     this.db
       .prepare(
-        `INSERT OR REPLACE INTO checkpoints (thread_id, checkpoint_id, parent_id, checkpoint, metadata) VALUES (?, ?, ?, ?, ?)`
+        `INSERT OR REPLACE INTO checkpoints (run_id, thread_id, checkpoint_id, parent_id, checkpoint, metadata) VALUES (?, ?, ?, ?, ?, ?)`
       )
       .run(...data);
   }
