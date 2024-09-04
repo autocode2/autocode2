@@ -27,6 +27,10 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     excludeFrom: Flags.string({
       description: "exclude files matching patterns contained in file",
       aliases: ["exclude-from"]
+    }),
+    continue: Flags.boolean({
+      description: "continue from the last run in this folder",
+      char: "c"
     })
   };
 
@@ -58,7 +62,8 @@ export abstract class BaseCommand<T extends typeof Command> extends Command {
     return {
       exclude: this.flags.exclude,
       include: this.flags.include,
-      excludeFrom: this.flags.excludeFrom
+      excludeFrom: this.flags.excludeFrom,
+      continue: this.flags.continue
     };
   }
 

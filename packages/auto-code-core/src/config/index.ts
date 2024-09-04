@@ -22,6 +22,7 @@ export type CommandConfigOptions = {
   configDir?: string;
   checkpointer?: "memory" | "sqlite";
   thread?: string;
+  continue?: boolean;
 };
 
 export type ConfigFile = {
@@ -31,7 +32,6 @@ export type ConfigFile = {
 export class CommandConfig {
   private dataDir: string;
   private configDir: string;
-  private threadId: string;
   private _database: Database;
 
   constructor(public opts: CommandConfigOptions) {}
@@ -114,10 +114,6 @@ export class CommandConfig {
     return getModelName(this.opts.model);
   }
 
-  getThreadId() {
-    return this.threadId;
-  }
-
   getModel() {
     return getModel(this.opts.model);
   }
@@ -142,6 +138,10 @@ export class CommandConfig {
     const dbPath = path.join(this.dataDir, "db.sqlite");
     this._database = Database.fromConnString(dbPath);
     return this._database;
+  }
+
+  getContinue() {
+    return this.opts.continue || false;
   }
 
   toJSON() {

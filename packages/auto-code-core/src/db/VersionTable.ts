@@ -1,4 +1,5 @@
 import { Database } from "better-sqlite3";
+import { VERSION } from "./Database.js";
 
 export interface Row {
   version: number;
@@ -15,7 +16,7 @@ CREATE TABLE IF NOT EXISTS version (
   version INTEGER NOT NULL,
   PRIMARY KEY (id)
 );`);
-      this.updateVersion(0);
+      this.updateVersion(VERSION);
     } catch (error) {
       console.log("Error creating version table", error);
       throw error;

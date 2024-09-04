@@ -32,20 +32,9 @@ export class CheckpointSaver extends BaseCheckpointSaver {
   ) {
     super(Serializer);
     this.table = new CheckpointTable(db);
-    this.isSetup = false;
-  }
-
-  private setup(): void {
-    if (this.isSetup) {
-      return;
-    }
-    this.table.setup();
-
-    this.isSetup = true;
   }
 
   async getTuple(config: RunnableConfig): Promise<CheckpointTuple | undefined> {
-    this.setup();
     const thread_id = this.getThreadId(config);
     const checkpoint_id = this.getCheckpointId(config);
 
@@ -109,7 +98,6 @@ export class CheckpointSaver extends BaseCheckpointSaver {
     limit?: number,
     before?: RunnableConfig
   ): AsyncGenerator<CheckpointTuple> {
-    this.setup();
     const thread_id = this.getThreadId(config);
     const options = {
       limit,
@@ -154,8 +142,6 @@ export class CheckpointSaver extends BaseCheckpointSaver {
     checkpoint: Checkpoint,
     metadata: CheckpointMetadata
   ): Promise<RunnableConfig> {
-    this.setup();
-
     try {
       const row = {
         run_id: this.run_id,

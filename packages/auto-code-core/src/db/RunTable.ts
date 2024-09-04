@@ -36,6 +36,14 @@ CREATE TABLE IF NOT EXISTS runs (
       .get(run_id) as Row;
   }
 
+  getLastRun(workdir: string): Row {
+    return this.db
+      .prepare(
+        `SELECT run_id, created_at, thread_id, workdir, config FROM runs WHERE workdir = ? ORDER BY created_at DESC LIMIT 1`
+      )
+      .get(workdir) as Row;
+  }
+
   insertRow(row: Omit<Row, "created_at">): void {
     const data = [row.run_id, row.workdir, row.config, row.thread_id];
 

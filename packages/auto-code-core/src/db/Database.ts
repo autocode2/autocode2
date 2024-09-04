@@ -11,8 +11,10 @@ export type RunInfo = {
   thread_id: string;
 };
 
+export const VERSION = 2;
+
 export class Database {
-  static VERSION = 2;
+  static VERSION = VERSION;
   private _checkpoints: CheckpointTable;
   private _versions: VersionTable;
   private _runs: RunTable;
@@ -29,6 +31,9 @@ export class Database {
   }
 
   migrate(version: number): void {
+    console.log(
+      `Migrating database from version ${version} to ${Database.VERSION}`
+    );
     if (version < 2) {
       this.checkpoints().drop();
     }
@@ -63,11 +68,18 @@ export class Database {
   }
 
   startRun(c: CommandConfig): RunInfo {
-    const run_id = uuidv4();
-    const thread_id = c.getThread() || uuidv4();
+    let thread_id = c.getThread();
     const workdir = c.getWorkDir();
-    const config = JSON.stringify(c.toJSON());
 
+    if (!thread_id && c.getContinue()) {
+      const lastRun = this.runs().getLastRun(workdir);
+      thread_id = lastRun?.thread_id || uuidv4();
+    } else {
+      thread_id = uuidv4();
+    }
+
+    const config = JSON.stringify(c.toJSON());
+    const run_id = uuidv4();
     this.runs().insertRow({ run_id, thread_id, workdir, config });
 
     return { run_id, thread_id };
