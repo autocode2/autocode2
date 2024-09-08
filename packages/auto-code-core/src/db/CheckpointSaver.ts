@@ -2,27 +2,27 @@ import { Database as DatabaseType } from "better-sqlite3";
 import { RunnableConfig } from "@langchain/core/runnables";
 import {
   BaseCheckpointSaver,
-  Checkpoint,
-  CheckpointMetadata,
-  CheckpointTuple,
-  SerializerProtocol
-} from "@langchain/langgraph";
-import { load } from "@langchain/core/load";
-import { CheckpointTable, Row } from "./CheckpointTable.js";
+  type Checkpoint,
+  type CheckpointListOptions,
+  type CheckpointTuple,
+  type PendingWrite,
+  type CheckpointMetadata
+} from "@langchain/langgraph-checkpoint";
+import { CheckpointTable, Row as CheckpointRow } from "./CheckpointTable.js";
+import {
+  CheckpointWritesTable,
+  Row as CheckpointWritesRow
+} from "./CheckpointWrites.js";
 
-const Serializer: SerializerProtocol<Checkpoint> = {
-  stringify(obj) {
-    return JSON.stringify(obj);
-  },
-  async parse(data) {
-    return await load(data.toString());
-  }
-};
-
-// snake_case is used to match Python implementation
+export interface CheckpointConfig {
+  thread_id?: string;
+  checkpoint_ns?: string;
+  checkpoint_id?: string;
+}
 
 export class CheckpointSaver extends BaseCheckpointSaver {
-  table: CheckpointTable;
+  checkpoints: CheckpointTable;
+  writes: CheckpointWritesTable;
 
   protected isSetup: boolean;
 
@@ -30,110 +30,122 @@ export class CheckpointSaver extends BaseCheckpointSaver {
     db: DatabaseType,
     public run_id: string
   ) {
-    super(Serializer);
-    this.table = new CheckpointTable(db);
+    super();
+    this.checkpoints = new CheckpointTable(db);
+    this.writes = new CheckpointWritesTable(db);
   }
 
   async getTuple(config: RunnableConfig): Promise<CheckpointTuple | undefined> {
-    const thread_id = this.getThreadId(config);
-    const checkpoint_id = this.getCheckpointId(config);
-
+    let {
+      thread_id,
+      checkpoint_ns = "",
+      checkpoint_id
+    }: CheckpointConfig = config.configurable ?? {};
+    let row: CheckpointRow;
     if (checkpoint_id) {
-      try {
-        const row = this.table.getRow(thread_id, checkpoint_id);
-
-        if (row) {
-          return {
-            config,
-            checkpoint: (await this.serde.parse(row.checkpoint)) as Checkpoint,
-            metadata: (await this.serde.parse(
-              row.metadata
-            )) as CheckpointMetadata,
-            parentConfig: row.parent_id
-              ? {
-                  configurable: {
-                    thread_id,
-                    checkpoint_id: row.parent_id
-                  }
-                }
-              : undefined
-          };
-        }
-      } catch (error) {
-        console.log("Error retrieving checkpoint", error);
-        throw error;
-      }
+      row = this.checkpoints.getRow({
+        thread_id,
+        checkpoint_ns,
+        checkpoint_id
+      });
     } else {
-      const row = this.table.getLatestRow(thread_id);
+      row = this.checkpoints.getLatestRow({ thread_id, checkpoint_ns });
+    }
+    if (row === undefined) {
+      return;
+    }
+    let finalConfig = config;
+    if (!checkpoint_id) {
+      finalConfig = {
+        configurable: {
+          thread_id: row.thread_id,
+          checkpoint_ns,
+          checkpoint_id: row.checkpoint_id
+        }
+      };
+    }
+    thread_id = finalConfig.configurable?.thread_id as string;
+    checkpoint_id = finalConfig.configurable?.checkpoint_id as string;
+    checkpoint_ns = finalConfig.configurable?.checkpoint_ns as string;
+    if (thread_id === undefined || checkpoint_id === undefined) {
+      throw new Error("Missing thread_id or checkpoint_id");
+    }
+    const pendingWritesRows = this.writes.getAllRows({
+      thread_id,
+      checkpoint_ns,
+      checkpoint_id
+    });
+    const pendingWrites = await Promise.all(
+      pendingWritesRows.map(async (row) => {
+        return [
+          row.task_id,
+          row.channel,
+          await this.serde.loadsTyped(row.type ?? "json", row.value ?? "")
+        ] as [string, string, unknown];
+      })
+    );
+    return {
+      config: finalConfig,
+      checkpoint: (await this.serde.loadsTyped(
+        row.type ?? "json",
+        row.checkpoint
+      )) as Checkpoint,
+      metadata: (await this.serde.loadsTyped(
+        row.type ?? "json",
+        row.metadata
+      )) as CheckpointMetadata,
+      parentConfig: row.parent_checkpoint_id
+        ? {
+            configurable: {
+              thread_id: row.thread_id,
+              checkpoint_ns,
+              checkpoint_id: row.parent_checkpoint_id
+            }
+          }
+        : undefined,
+      pendingWrites
+    };
+  }
 
-      if (row) {
-        return {
+  async *list(
+    config: RunnableConfig,
+    options?: CheckpointListOptions
+  ): AsyncGenerator<CheckpointTuple> {
+    const thread_id = config.configurable?.thread_id as string;
+    const before = options?.before?.configurable?.checkpoint_id as string;
+    const rows = this.checkpoints.getAllRows(thread_id, {
+      limit: options?.limit,
+      before
+    });
+    if (rows) {
+      for (const row of rows) {
+        yield {
           config: {
             configurable: {
               thread_id: row.thread_id,
+              checkpoint_ns: row.checkpoint_ns,
               checkpoint_id: row.checkpoint_id
             }
           },
-          checkpoint: (await this.serde.parse(row.checkpoint)) as Checkpoint,
-          metadata: (await this.serde.parse(
+          checkpoint: (await this.serde.loadsTyped(
+            row.type ?? "json",
+            row.checkpoint
+          )) as Checkpoint,
+          metadata: (await this.serde.loadsTyped(
+            row.type ?? "json",
             row.metadata
           )) as CheckpointMetadata,
-          parentConfig: row.parent_id
+          parentConfig: row.parent_checkpoint_id
             ? {
                 configurable: {
                   thread_id: row.thread_id,
-                  checkpoint_id: row.parent_id
+                  checkpoint_ns: row.checkpoint_ns,
+                  checkpoint_id: row.parent_checkpoint_id
                 }
               }
             : undefined
         };
       }
-    }
-
-    return undefined;
-  }
-
-  async *list(
-    config: RunnableConfig,
-    limit?: number,
-    before?: RunnableConfig
-  ): AsyncGenerator<CheckpointTuple> {
-    const thread_id = this.getThreadId(config);
-    const options = {
-      limit,
-      before: before?.configurable?.checkpoint_id as string | undefined
-    };
-
-    try {
-      const rows: Row[] = this.table.getAllRows(thread_id, options);
-
-      if (rows) {
-        for (const row of rows) {
-          yield {
-            config: {
-              configurable: {
-                thread_id: row.thread_id,
-                checkpoint_id: row.checkpoint_id
-              }
-            },
-            checkpoint: (await this.serde.parse(row.checkpoint)) as Checkpoint,
-            metadata: (await this.serde.parse(
-              row.metadata
-            )) as CheckpointMetadata,
-            parentConfig: row.parent_id
-              ? {
-                  configurable: {
-                    thread_id: row.thread_id,
-                    checkpoint_id: row.parent_id
-                  }
-                }
-              : undefined
-          };
-        }
-      }
-    } catch (error) {
-      console.log("Error listing checkpoints", error);
-      throw error;
     }
   }
 
@@ -142,38 +154,51 @@ export class CheckpointSaver extends BaseCheckpointSaver {
     checkpoint: Checkpoint,
     metadata: CheckpointMetadata
   ): Promise<RunnableConfig> {
-    try {
-      const row = {
-        run_id: this.run_id,
-        thread_id: this.getThreadId(config),
-        checkpoint_id: checkpoint.id,
-        parent_id: this.getCheckpointId(config),
-        checkpoint: this.serde.stringify(checkpoint),
-        metadata: this.serde.stringify(metadata)
-      };
-      this.table.insertRow(row);
-    } catch (error) {
-      console.log("Error saving checkpoint", error);
-      throw error;
+    const [type1, serializedCheckpoint] = this.serde.dumpsTyped(checkpoint);
+    const [type2, serializedMetadata] = this.serde.dumpsTyped(metadata);
+    if (type1 !== type2) {
+      throw new Error(
+        "Failed to serialized checkpoint and metadata to the same type."
+      );
     }
+
+    this.checkpoints.insertRow({
+      thread_id: config.configurable?.thread_id as string,
+      checkpoint_ns: config.configurable?.checkpoint_ns as string,
+      checkpoint_id: checkpoint.id,
+      parent_checkpoint_id: config.configurable?.checkpoint_id as string,
+      type: type1,
+      checkpoint: serializedCheckpoint,
+      metadata: serializedMetadata
+    });
 
     return {
       configurable: {
-        thread_id: this.getThreadId(config),
+        thread_id: config.configurable?.thread_id as string,
+        checkpoint_ns: config.configurable?.checkpoint_ns as string,
         checkpoint_id: checkpoint.id
       }
     };
   }
 
-  private getThreadId(config: RunnableConfig): string {
-    const thread_id = config.configurable?.thread_id as string | undefined;
-    if (!thread_id) {
-      throw new Error("Thread ID not set");
-    }
-    return thread_id;
-  }
-
-  private getCheckpointId(config: RunnableConfig): string | undefined {
-    return config.configurable?.checkpoint_id as string | undefined;
+  async putWrites(
+    config: RunnableConfig,
+    writes: PendingWrite[],
+    taskId: string
+  ): Promise<void> {
+    const rows: CheckpointWritesRow[] = writes.map((write, idx) => {
+      const [type, serializedWrite] = this.serde.dumpsTyped(write[1]);
+      return {
+        thread_id: config.configurable?.thread_id as string,
+        checkpoint_ns: config.configurable?.checkpoint_ns as string,
+        checkpoint_id: config.configurable?.checkpoint_id as string,
+        task_id: taskId,
+        idx,
+        channel: write[0],
+        type,
+        value: serializedWrite
+      };
+    });
+    this.writes.insertRows(rows);
   }
 }

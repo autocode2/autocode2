@@ -5,19 +5,21 @@ import { RunTable } from "./RunTable.js";
 import { CommandConfig } from "../config/index.js";
 import { v4 as uuidv4 } from "uuid";
 import { VersionTable } from "./VersionTable.js";
+import { CheckpointWritesTable } from "./CheckpointWrites.js";
 
 export type RunInfo = {
   run_id: string;
   thread_id: string;
 };
 
-export const VERSION = 2;
+export const VERSION = 4;
 
 export class Database {
   static VERSION = VERSION;
   private _checkpoints: CheckpointTable;
   private _versions: VersionTable;
   private _runs: RunTable;
+  private _checkpointWrites: CheckpointWritesTable;
 
   constructor(protected db: DatabaseType) {}
 
@@ -25,6 +27,7 @@ export class Database {
     this.db.pragma("journal_mode=WAL");
     this.versions().setup();
     const { version } = this.versions().getVersion();
+    console.log("DATABASE VERSION", version);
     if (version !== Database.VERSION) {
       this.migrate(version);
     }
@@ -34,10 +37,12 @@ export class Database {
     console.log(
       `Migrating database from version ${version} to ${Database.VERSION}`
     );
-    if (version < 2) {
+    if (version < 4) {
       this.checkpoints().drop();
+      this.runs().drop();
     }
     this.checkpoints().setup();
+    this.checkpointWrites().setup();
     this.runs().setup();
     this.versions().updateVersion(Database.VERSION);
   }
@@ -55,6 +60,12 @@ export class Database {
   checkpoints(): CheckpointTable {
     this._checkpoints = this._checkpoints || new CheckpointTable(this.db);
     return this._checkpoints;
+  }
+
+  checkpointWrites(): CheckpointWritesTable {
+    this._checkpointWrites =
+      this._checkpointWrites || new CheckpointWritesTable(this.db);
+    return this._checkpointWrites;
   }
 
   versions(): VersionTable {

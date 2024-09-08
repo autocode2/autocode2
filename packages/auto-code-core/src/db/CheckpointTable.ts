@@ -1,12 +1,13 @@
 import { Database } from "better-sqlite3";
 
 export interface Row {
-  checkpoint: string;
-  metadata: string;
-  parent_id?: string;
+  checkpoint: string | Uint8Array;
+  metadata: string | Uint8Array;
+  parent_checkpoint_id?: string;
   thread_id: string;
-  run_id: string;
   checkpoint_id: string;
+  checkpoint_ns?: string;
+  type?: string;
 }
 
 export class CheckpointTable {
@@ -16,13 +17,14 @@ export class CheckpointTable {
     try {
       this.db.exec(`
 CREATE TABLE IF NOT EXISTS checkpoints (
-  run_id TEXT NOT NULL,
   thread_id TEXT NOT NULL,
+  checkpoint_ns TEXT NOT NULL DEFAULT '',
   checkpoint_id TEXT NOT NULL,
-  parent_id TEXT,
+  parent_checkpoint_id TEXT,
+  type TEXT,
   checkpoint BLOB,
   metadata BLOB,
-  PRIMARY KEY (thread_id, checkpoint_id)
+  PRIMARY KEY (thread_id, checkpoint_ns, checkpoint_id)
 );`);
     } catch (error) {
       console.log("Error creating checkpoints table", error);
@@ -32,6 +34,7 @@ CREATE TABLE IF NOT EXISTS checkpoints (
 
   drop(): void {
     try {
+      console.log("Dropping checkpoints table");
       this.db.exec(`DROP TABLE IF EXISTS checkpoints;`);
     } catch (error) {
       console.log("Error dropping checkpoints table", error);
@@ -39,20 +42,34 @@ CREATE TABLE IF NOT EXISTS checkpoints (
     }
   }
 
-  getRow(thread_id: string, checkpoint_id: string): Row {
+  getRow({
+    thread_id,
+    checkpoint_ns,
+    checkpoint_id
+  }: {
+    thread_id?: string;
+    checkpoint_ns: string;
+    checkpoint_id: string;
+  }): Row {
     return this.db
       .prepare(
-        `SELECT thread_id, checkpoint_id, parent_id, checkpoint, metadata FROM checkpoints WHERE thread_id = ? AND checkpoint_id = ?`
+        `SELECT thread_id, checkpoint_id, parent_checkpoint_id, type, checkpoint, metadata FROM checkpoints WHERE thread_id = ? AND checkpoint_ns = ? AND checkpoint_id = ?`
       )
-      .get(thread_id, checkpoint_id) as Row;
+      .get(thread_id, checkpoint_ns, checkpoint_id) as Row;
   }
 
-  getLatestRow(thread_id: string): Row {
+  getLatestRow({
+    thread_id,
+    checkpoint_ns
+  }: {
+    thread_id?: string;
+    checkpoint_ns: string;
+  }): Row {
     return this.db
       .prepare(
-        `SELECT thread_id, checkpoint_id, parent_id, checkpoint, metadata FROM checkpoints WHERE thread_id = ? ORDER BY checkpoint_id DESC LIMIT 1`
+        `SELECT thread_id, checkpoint_id, parent_checkpoint_id, type, checkpoint, metadata FROM checkpoints WHERE thread_id = ? AND checkpoint_ns = ? ORDER BY checkpoint_id DESC LIMIT 1`
       )
-      .get(thread_id) as Row;
+      .get(thread_id, checkpoint_ns) as Row;
   }
 
   getAllRows(
@@ -71,17 +88,18 @@ CREATE TABLE IF NOT EXISTS checkpoints (
 
   insertRow(row: Row): void {
     const data = [
-      row.run_id,
       row.thread_id,
+      row.checkpoint_ns,
       row.checkpoint_id,
-      row.parent_id,
+      row.parent_checkpoint_id,
+      row.type,
       row.checkpoint,
       row.metadata
     ];
 
     this.db
       .prepare(
-        `INSERT OR REPLACE INTO checkpoints (run_id, thread_id, checkpoint_id, parent_id, checkpoint, metadata) VALUES (?, ?, ?, ?, ?, ?)`
+        `INSERT OR REPLACE INTO checkpoints (thread_id, checkpoint_ns, checkpoint_id, parent_checkpoint_id, type, checkpoint, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)`
       )
       .run(...data);
   }

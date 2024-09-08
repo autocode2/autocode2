@@ -5,7 +5,13 @@ import {
   SystemMessage,
   ToolMessage
 } from "@langchain/core/messages";
-import { END, START, StateGraph, StateGraphArgs } from "@langchain/langgraph";
+import {
+  END,
+  START,
+  StateGraph,
+  Annotation,
+  MessagesAnnotation
+} from "@langchain/langgraph";
 import { StructuredTool } from "langchain/tools";
 import { ToolCall } from "@langchain/core/messages/tool";
 import { ToolNode } from "@langchain/langgraph/prebuilt";
@@ -29,10 +35,6 @@ Use the tools to perform the task. Ensure that the content of files is complete 
 You may call multiple tools in a single response.  You may also call the same tool multiple times. Call all the necessary tools to complete the users request.
 `;
 
-export type GraphState = {
-  messages: BaseMessage[];
-};
-
 export type UsageMetadata = {
   input_tokens: number;
   output_tokens: number;
@@ -40,13 +42,10 @@ export type UsageMetadata = {
   cache_read_input_tokens: number;
 };
 
-type GraphStateChannels = StateGraphArgs<GraphState>["channels"];
-const graphStateChannels: GraphStateChannels = {
-  messages: {
-    value: (x?: BaseMessage[], y?: BaseMessage[]) => (x ?? []).concat(y ?? []),
-    default: () => []
-  }
-};
+export const StateAnnotation = Annotation.Root({
+  ...MessagesAnnotation.spec
+});
+export type GraphState = typeof StateAnnotation.State;
 
 export type Events = {
   response: {
@@ -66,11 +65,7 @@ type Listeners = {
 };
 
 export class CodeAgent {
-  graph: StateGraph<
-    GraphState,
-    Partial<GraphState>,
-    "__start__" | "model" | "tools"
-  >;
+  graph: ReturnType<typeof this.buildGraph>;
   toolsExecutor: ToolNode<GraphState>;
   listeners: Listeners;
   config: CommandConfig;
@@ -281,9 +276,7 @@ export class CodeAgent {
   }
 
   buildGraph() {
-    const graph = new StateGraph<GraphState>({
-      channels: this.graphStateChannels
-    })
+    const graph = new StateGraph(StateAnnotation)
       .addNode("model", this.modelNode.bind(this))
       .addNode("tools", this.toolsNode.bind(this))
       .addEdge(START, "model")
@@ -295,6 +288,4 @@ export class CodeAgent {
 
     return graph;
   }
-
-  graphStateChannels: GraphStateChannels = graphStateChannels;
 }

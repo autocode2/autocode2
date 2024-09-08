@@ -28,6 +28,15 @@ CREATE TABLE IF NOT EXISTS runs (
     }
   }
 
+  drop(): void {
+    try {
+      this.db.exec(`DROP TABLE IF EXISTS runs;`);
+    } catch (error) {
+      console.log("Error dropping runs table", error);
+      throw error;
+    }
+  }
+
   getRow(run_id: string): Row {
     return this.db
       .prepare(
