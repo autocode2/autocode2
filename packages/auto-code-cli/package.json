@@ -1,6 +1,6 @@
 {
   "name": "@autocode2/cli",
-  "version": "0.0.0-development",
+  "version": "0.0.1",
   "description": "Autocode CLI",
   "author": "Gareth Andrew <gingerhendrix@gmail.com>",
   "license": "MIT",
