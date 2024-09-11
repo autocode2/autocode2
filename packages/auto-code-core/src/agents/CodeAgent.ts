@@ -242,7 +242,7 @@ export class CodeAgent {
     });
 
     if (actions.length === 0) {
-      return {};
+      return { messages: [] };
     }
     const toolsResponse = (await this.toolsExecutor.invoke(state)) as {
       messages: ToolMessage[];
