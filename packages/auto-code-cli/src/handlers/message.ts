@@ -9,11 +9,6 @@ export default function messageHandler(
 ) {
   agent.on("start", async ({ run_id, thread_id }) => {
     console.log(`Starting run: ${run_id} - ${thread_id}`);
-    const context = await config.getContext();
-    console.log("Context: ");
-    context.files.forEach((file) => {
-      console.log(`${file.path} ${file.content.length} bytes`);
-    });
   });
 
   agent.on("end", async () => {
