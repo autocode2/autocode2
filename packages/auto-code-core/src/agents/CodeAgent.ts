@@ -107,8 +107,7 @@ export class CodeAgent {
     const db = this.config.getDatabase();
 
     const query = this.config.getPrompt();
-    this.context = await this.config.getContext();
-    const { run_id, thread_id } = db.startRun(this.config);
+    const { run_id, thread_id, isRestart } = db.startRun(this.config);
     const checkpointer = db.checkpointSaver(run_id);
 
     const compiledGraph = this.graph
@@ -121,8 +120,15 @@ export class CodeAgent {
           thread_id
         }
       });
+    const messages = [];
+    if (!isRestart) {
+      this.context = await this.config.getContext();
+      messages.push(this.systemPrompt({ context: this.context }));
+    }
+    messages.push(new HumanMessage(query));
+
     const input = {
-      messages: [new HumanMessage(query)]
+      messages
     };
     await this.emit("start", { agent: this, run_id, thread_id });
 
@@ -184,11 +190,7 @@ export class CodeAgent {
     });
 
     let messages: BaseMessage[] = [];
-    const systemMessages = [this.systemPrompt({ context: this.context })];
-    let response: AIMessage = await model.invoke([
-      ...systemMessages,
-      ...state.messages
-    ]);
+    let response: AIMessage = await model.invoke(state.messages);
     const stopReason = response.response_metadata["stop_reason"] as string;
 
     if (stopReason === "max_tokens") {

@@ -10,6 +10,7 @@ import { CheckpointWritesTable } from "./CheckpointWrites.js";
 export type RunInfo = {
   run_id: string;
   thread_id: string;
+  isRestart: boolean;
 };
 
 export const VERSION = 4;
@@ -84,15 +85,15 @@ export class Database {
 
     if (!thread_id && c.getContinue()) {
       const lastRun = this.runs().getLastRun(workdir);
-      thread_id = lastRun?.thread_id || uuidv4();
-    } else {
-      thread_id = uuidv4();
+      thread_id = lastRun?.thread_id;
     }
+    const isRestart = !!thread_id;
+    thread_id ||= uuidv4();
 
     const config = JSON.stringify(c.toJSON());
     const run_id = uuidv4();
     this.runs().insertRow({ run_id, thread_id, workdir, config });
 
-    return { run_id, thread_id };
+    return { run_id, thread_id, isRestart };
   }
 }
