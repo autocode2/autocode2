@@ -10,7 +10,9 @@ import {
   START,
   StateGraph,
   Annotation,
-  MessagesAnnotation
+  MessagesAnnotation,
+  CompiledStateGraph,
+  CompiledGraph
 } from "@langchain/langgraph";
 import { StructuredTool } from "langchain/tools";
 import { ToolCall } from "@langchain/core/messages/tool";
@@ -79,6 +81,11 @@ export class CodeAgent {
     llm_calls: 0
   };
   context: Context;
+  compiledGraph: {
+    invoke: (input: Partial<GraphState>) => Promise<GraphState>;
+  };
+  thread_id: string;
+  run_id: string;
 
   constructor({ config }: { config: CommandConfig }) {
     this.config = config;
@@ -103,14 +110,29 @@ export class CodeAgent {
     }
   }
 
-  async run() {
+  async run(prompt?: string) {
+    const { isRestart } = await this.initRun();
+
+    const query = prompt || this.config.getPrompt();
+    const messages = [];
+    if (!isRestart) {
+      this.context = await this.config.getContext();
+      messages.push(this.systemPrompt({ context: this.context }));
+    }
+    messages.push(new HumanMessage(query));
+
+    await this.runGraph(messages);
+  }
+
+  async initRun() {
     const db = this.config.getDatabase();
 
-    const query = this.config.getPrompt();
     const { run_id, thread_id, isRestart } = db.startRun(this.config);
+    this.run_id = run_id;
+    this.thread_id = thread_id;
     const checkpointer = db.checkpointSaver(run_id);
 
-    const compiledGraph = this.graph
+    this.compiledGraph = this.graph
       .compile({
         checkpointer
       })
@@ -120,19 +142,26 @@ export class CodeAgent {
           thread_id
         }
       });
-    const messages = [];
-    if (!isRestart) {
-      this.context = await this.config.getContext();
-      messages.push(this.systemPrompt({ context: this.context }));
-    }
-    messages.push(new HumanMessage(query));
 
+    return { run_id, thread_id, isRestart };
+  }
+
+  async continueRun(prompt: string) {
+    const messages = [new HumanMessage(prompt)];
+    await this.runGraph(messages);
+  }
+
+  async runGraph(messages: BaseMessage[]) {
     const input = {
       messages
     };
-    await this.emit("start", { agent: this, run_id, thread_id });
+    await this.emit("start", {
+      agent: this,
+      run_id: this.run_id,
+      thread_id: this.thread_id
+    });
 
-    (await compiledGraph.invoke(input)) as GraphState;
+    await this.compiledGraph.invoke(input);
 
     await this.emit("end", { agent: this });
   }

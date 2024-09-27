@@ -94,6 +94,8 @@ export class Database {
     const run_id = uuidv4();
     this.runs().insertRow({ run_id, thread_id, workdir, config });
 
+    c.opts.thread = thread_id;
+
     return { run_id, thread_id, isRestart };
   }
 }

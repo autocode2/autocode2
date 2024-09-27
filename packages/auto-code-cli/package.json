@@ -37,12 +37,13 @@
   },
   "dependencies": {
     "@autocode2/core": "workspace:*",
+    "@inquirer/prompts": "^6.0.1",
     "@oclif/core": "^4.0.17",
     "tiny-invariant": "^1.3.3",
     "tty-table": "^4.2.3"
   },
   "bin": {
-    "auto-code-cli": "./bin/run.js"
+    "auto-code2": "./bin/run.js"
   },
   "oclif": {
     "bin": "auto-code-cli",
