@@ -11,9 +11,7 @@ import {
   START,
   StateGraph,
   Annotation,
-  MessagesAnnotation,
-  CompiledStateGraph,
-  CompiledGraph
+  MessagesAnnotation
 } from "@langchain/langgraph";
 import { StructuredTool } from "langchain/tools";
 import { ToolCall } from "@langchain/core/messages/tool";
@@ -28,6 +26,7 @@ import {
 } from "../llm/messageTools.js";
 import { CommandConfig } from "../config/index.js";
 import { zodToJsonSchema } from "zod-to-json-schema";
+import { RunnableConfig } from "@langchain/core/runnables";
 
 export const systemPrompt = `You are an AI coding tool. Help the user with their coding tasks using the tools provided.
 
@@ -270,7 +269,7 @@ export class CodeAgent {
     return { messages };
   }
 
-  async toolsNode(state: GraphState) {
+  async toolsNode(state: GraphState, config: Partial<RunnableConfig>) {
     const response = getAIResponse(state.messages);
 
     const message = getMessage(response);
@@ -286,7 +285,7 @@ export class CodeAgent {
     if (actions.length === 0) {
       return { messages: [] };
     }
-    const toolsResponse = (await this.toolsExecutor.invoke(state)) as {
+    const toolsResponse = (await this.toolsExecutor.invoke(state, config)) as {
       messages: ToolMessage[];
     };
     return toolsResponse;
