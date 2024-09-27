@@ -2,6 +2,7 @@ import {
   AIMessage,
   BaseMessage,
   HumanMessage,
+  MessageContentComplex,
   SystemMessage,
   ToolMessage
 } from "@langchain/core/messages";
@@ -119,7 +120,9 @@ export class CodeAgent {
       this.context = await this.config.getContext();
       messages.push(this.systemPrompt({ context: this.context }));
     }
-    messages.push(new HumanMessage(query));
+    messages.push(
+      new HumanMessage({ content: [this.textMessageContent(query)] })
+    );
 
     await this.runGraph(messages);
   }
@@ -147,7 +150,9 @@ export class CodeAgent {
   }
 
   async continueRun(prompt: string) {
-    const messages = [new HumanMessage(prompt)];
+    const messages = [
+      new HumanMessage({ content: [this.textMessageContent(prompt)] })
+    ];
     await this.runGraph(messages);
   }
 
@@ -187,14 +192,20 @@ export class CodeAgent {
     };
   }
 
+  textMessageContent(text: string): MessageContentComplex {
+    return {
+      type: "text",
+      text,
+      cache_control: { type: "ephemeral" }
+    };
+  }
+
   systemPrompt({ context }: { context: Context }): SystemMessage {
     return new SystemMessage({
       content: [
-        {
-          type: "text",
-          text: `${systemPrompt}\n${encodeContextAsXML(context)}`,
-          cache_control: { type: "ephemeral" }
-        }
+        this.textMessageContent(
+          `${systemPrompt}\n${encodeContextAsXML(context)}`
+        )
       ]
     });
   }
@@ -278,18 +289,19 @@ export class CodeAgent {
     const toolsResponse = (await this.toolsExecutor.invoke(state)) as {
       messages: ToolMessage[];
     };
-    if (!this.config.getModelName().startsWith("claude")) {
-      return toolsResponse;
-    }
-    // This is anthropic specific
-    const toolMessage = new HumanMessage({
-      content: toolsResponse.messages.map((m) => ({
-        type: "tool_result",
-        tool_use_id: m.tool_call_id,
-        content: m.content
-      }))
-    });
-    return { messages: [toolMessage] };
+    return toolsResponse;
+    //if (!this.config.getModelName().startsWith("claude")) {
+    //return toolsResponse;
+    //}
+    //// This is anthropic specific
+    //const toolMessage = new HumanMessage({
+    //content: toolsResponse.messages.map((m) => ({
+    //type: "tool_result",
+    //tool_use_id: m.tool_call_id,
+    //content: m.content
+    //}))
+    //});
+    //return { messages: [toolMessage] };
   }
 
   isFinishedTool(toolCall: ToolCall): boolean {
