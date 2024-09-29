@@ -2,7 +2,6 @@ import {
   AIMessage,
   BaseMessage,
   HumanMessage,
-  MessageContentComplex,
   SystemMessage,
   ToolMessage
 } from "@langchain/core/messages";
@@ -20,6 +19,8 @@ import { createFile, removeFile, replaceFile } from "../tools/filetools.js";
 import { sendMessage } from "../tools/messages.js";
 import { Context, encodeContextAsXML } from "../context/context.js";
 import {
+  applyCachingToMessages,
+  cachedMessageContent,
   getAIResponse,
   getLastAIMessage,
   getMessage
@@ -119,9 +120,7 @@ export class CodeAgent {
       this.context = await this.config.getContext();
       messages.push(this.systemPrompt({ context: this.context }));
     }
-    messages.push(
-      new HumanMessage({ content: [this.textMessageContent(query)] })
-    );
+    messages.push(new HumanMessage(query));
 
     await this.runGraph(messages);
   }
@@ -149,9 +148,7 @@ export class CodeAgent {
   }
 
   async continueRun(prompt: string) {
-    const messages = [
-      new HumanMessage({ content: [this.textMessageContent(prompt)] })
-    ];
+    const messages = [new HumanMessage(prompt)];
     await this.runGraph(messages);
   }
 
@@ -191,20 +188,10 @@ export class CodeAgent {
     };
   }
 
-  textMessageContent(text: string): MessageContentComplex {
-    return {
-      type: "text",
-      text,
-      cache_control: { type: "ephemeral" }
-    };
-  }
-
   systemPrompt({ context }: { context: Context }): SystemMessage {
     return new SystemMessage({
       content: [
-        this.textMessageContent(
-          `${systemPrompt}\n${encodeContextAsXML(context)}`
-        )
+        cachedMessageContent(`${systemPrompt}\n${encodeContextAsXML(context)}`)
       ]
     });
   }
@@ -228,8 +215,9 @@ export class CodeAgent {
       tool_choice: "auto"
     });
 
-    let messages: BaseMessage[] = [];
-    let response: AIMessage = await model.invoke(state.messages);
+    const messages: BaseMessage[] = applyCachingToMessages(state.messages);
+    let response: AIMessage = await model.invoke(messages);
+
     const stopReason = response.response_metadata["stop_reason"] as string;
 
     if (stopReason === "max_tokens") {
@@ -245,7 +233,6 @@ export class CodeAgent {
       //console.log("Joined response", messages);
     }
 
-    messages = [response];
     await this.emit("ai_message", { message: response });
 
     const usage_metadata = response.response_metadata.usage as UsageMetadata;
@@ -266,7 +253,7 @@ export class CodeAgent {
       console.log("No usage metadata found in response");
     }
 
-    return { messages };
+    return { messages: [response] };
   }
 
   async toolsNode(state: GraphState, config: Partial<RunnableConfig>) {
