@@ -50,12 +50,14 @@ export const StateAnnotation = Annotation.Root({
 });
 export type GraphState = typeof StateAnnotation.State;
 
+export type CodeAgentResponse = {
+  message: string | null;
+  actions: ToolCall[];
+  usage: { input_tokens?: number; output_tokens?: number };
+};
+
 export type Events = {
-  response: {
-    message: string | null;
-    actions: ToolCall[];
-    usage: { input_tokens?: number; output_tokens?: number };
-  };
+  response: CodeAgentResponse;
   ai_message: { message: AIMessage };
   start: { agent: CodeAgent; run_id: string; thread_id: string };
   end: { agent: CodeAgent };

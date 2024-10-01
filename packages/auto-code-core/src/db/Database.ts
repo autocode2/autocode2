@@ -28,7 +28,7 @@ export class Database {
     this.db.pragma("journal_mode=WAL");
     this.versions().setup();
     const { version } = this.versions().getVersion();
-    console.log("DATABASE VERSION", version);
+    //console.log("DATABASE VERSION", version);
     if (version !== Database.VERSION) {
       this.migrate(version);
     }
