@@ -3,6 +3,8 @@ import filesystemHandler from "../handlers/filesystem.js";
 import { input } from "@inquirer/prompts";
 import { Events } from "@autocode2/core/agents/CodeAgent.js";
 import printUsage from "../utils/printUsage.js";
+import prompt from "./prompt.js";
+import chalk from "chalk";
 
 export class Chat {
   constructor(
@@ -18,8 +20,9 @@ export class Chat {
   }
 
   public async getNextInput() {
-    const message = await input({
-      message: ">>>"
+    const message = await prompt({
+      config: this.config,
+      codeAgent: this.codeAgent
     });
     if (message === "exit") {
       await this.handleExit();
@@ -42,19 +45,19 @@ export class Chat {
     }
     for (const action of response.actions) {
       if (action.name === "message") {
-        console.log("Message:" + action.args.message);
+        console.log("\uf27a " + action.args.message);
       }
       if (action.name === "thinking") {
         console.log("Thinking... ", action.args);
       }
       if (action.name === "create-file") {
-        console.log("Creating file: ", action.args.filename);
+        console.log(chalk.bold.blue("Creating file: "), action.args.filename);
       }
       if (action.name === "replace-file") {
-        console.log("Replacing file: ", action.args.filename);
+        console.log(chalk.bold.blue("Replacing file: "), action.args.filename);
       }
       if (action.name === "remove-file") {
-        console.log("Removing file: ", action.args.filename);
+        console.log(chalk.bold.blue("Removing file: "), action.args.filename);
       }
     }
   }
