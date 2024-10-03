@@ -1,6 +1,6 @@
 import { CodeAgent, CommandConfig } from "@autocode2/core";
 import filesystemHandler from "../handlers/filesystem.js";
-import { input } from "@inquirer/prompts";
+//import { input } from "@inquirer/prompts";
 import { Events } from "@autocode2/core/agents/CodeAgent.js";
 import printUsage from "../utils/printUsage.js";
 import prompt from "./prompt.js";

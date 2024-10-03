@@ -10,6 +10,7 @@
     "lib": ["es2023"],
     "module": "nodenext",
     "moduleResolution": "nodenext",
+    "jsx": "react",
 
     /* Strict Type-Checking Options */
     "noImplicitAny": true,

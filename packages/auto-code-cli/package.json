@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@autocode2/core": "workspace:*",
+    "@autocode2/ink": "workspace:*",
     "@inquirer/core": "^9.2.1",
     "@inquirer/prompts": "^6.0.1",
     "@inquirer/type": "^1.5.5",

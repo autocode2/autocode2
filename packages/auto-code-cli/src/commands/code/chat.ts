@@ -2,7 +2,7 @@ import { Flags } from "@oclif/core";
 import { BaseCommand } from "../../baseCommand.js";
 import { CodeAgent } from "@autocode2/core";
 import { CommandConfigOptions } from "@autocode2/core/config/index.js";
-import { Chat } from "../../chat/Chat.js";
+import { Chat } from "@autocode2/ink";
 
 export default class CodeChat extends BaseCommand<typeof CodeChat> {
   static override description = "Chat with the code agent";

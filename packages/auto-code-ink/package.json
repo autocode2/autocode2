@@ -1,0 +1,35 @@
+{
+	"name": "@autocode2/ink",
+	"version": "0.0.0",
+	"license": "MIT",
+	"bin": "dist/cli.js",
+	"type": "module",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+	"engines": {
+		"node": ">=16"
+	},
+	"scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "clean:build": "rimraf ./dist",
+    "dev": "nodemon",
+    "lint": "eslint . --ext .js,.ts",
+    "lint:fix": "pnpm lint --fix",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write .",
+    "test": "jest",
+    "typecheck": "tsc"
+	},
+	"files": [
+		"dist"
+	],
+	"dependencies": {
+		"@autocode2/core": "workspace:*",
+		"ink": "^4.1.0",
+		"react": "^18.2.0"
+	},
+	"devDependencies": {
+		"@types/react": "^18.0.32"
+	}
+}
