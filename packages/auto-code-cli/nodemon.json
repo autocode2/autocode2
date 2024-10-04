@@ -2,6 +2,6 @@
   "$schema": "https://json.schemastore.org/nodemon.json",
   "watch": ["./src/**", "./node_modules/@autocode2/**/dist/**"],
   "ignoreRoot": [],
-  "ext": "ts,js,tsx",
+  "ext": "ts,js",
   "exec": "pnpm typecheck && pnpm build"
 }
