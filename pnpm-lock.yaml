@@ -166,6 +166,9 @@ importers:
       '@inkjs/ui':
         specifier: ^2.0.0
         version: 2.0.0(ink@5.0.1(@types/react@18.3.11)(react@18.3.1))
+      external-editor:
+        specifier: ^3.1.0
+        version: 3.1.0
       ink:
         specifier: ^5.0.1
         version: 5.0.1(@types/react@18.3.11)(react@18.3.1)
@@ -188,6 +191,9 @@ importers:
       prettier:
         specifier: ^3.3.3
         version: 3.3.3
+      type-fest:
+        specifier: ^4.26.1
+        version: 4.26.1
 
 packages:
 
