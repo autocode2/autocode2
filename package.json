@@ -1,6 +1,6 @@
 {
   "name": "@autocode2/monorepo",
-  "version": "0.0.0-development",
+  "version": "0.2.0",
   "description": "An automatic coding agent",
   "author": "Gareth Andrew <gingerhendrix@gmail.com>",
   "license": "MIT",
