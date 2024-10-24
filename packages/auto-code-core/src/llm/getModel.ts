@@ -12,7 +12,7 @@ export type TokenCostsPerMillion = {
 
 export const modelAliases: { [key: string]: string } = {
   opus: "claude-3-opus-20240229",
-  sonnet: "claude-3-5-sonnet-20240620",
+  sonnet: "claude-3-5-sonnet-20241022",
   haiku: "claude-3-haiku-20240307",
   gpt: "gpt-4o",
   "gpt-4o": "gpt-4o",
@@ -24,6 +24,12 @@ export const modelCosts = {
   "claude-3-opus-20240229": { input: 15.0, output: 75.0 },
   "claude-3-sonnet-20240229": { input: 3.0, output: 15.0 },
   "claude-3-5-sonnet-20240620": {
+    input: 3.0,
+    output: 15.0,
+    cache_read_input: 0.3,
+    cache_creation_input: 3.75
+  },
+  "claude-3-5-sonnet-20241022": {
     input: 3.0,
     output: 15.0,
     cache_read_input: 0.3,
