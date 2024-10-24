@@ -1,6 +1,6 @@
 {
   "name": "@autocode2/core",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "The core library for the AutoCode project",
   "author": "Gareth Andrew <gingerhendrix@gmail.com>",
   "license": "MIT",

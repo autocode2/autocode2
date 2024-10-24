@@ -34,7 +34,7 @@
     "typecheck": "turbo run --parallel typecheck",
     "prepare": "husky",
     "changeset": "changeset",
-    "publish-packages": "turbo run clean:build build lint typecheck && changeset version && changeset publish"
+    "publish-packages": "turbo run build lint typecheck && changeset version && changeset publish"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
