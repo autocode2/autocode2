@@ -1,5 +1,11 @@
 # @autocode2/ink
 
+## 0.2.2
+
+### Patch Changes
+
+- f483b28: Fix internal dependencies
+
 ## 0.2.1
 
 ### Patch Changes
