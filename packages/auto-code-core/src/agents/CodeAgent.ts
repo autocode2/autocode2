@@ -10,7 +10,8 @@ import {
   START,
   StateGraph,
   Annotation,
-  MessagesAnnotation
+  MessagesAnnotation,
+  CompiledStateGraph
 } from "@langchain/langgraph";
 import { StructuredTool } from "langchain/tools";
 import { ToolCall } from "@langchain/core/messages/tool";
@@ -84,9 +85,11 @@ export class CodeAgent {
     llm_calls: 0
   };
   context: Context;
-  compiledGraph: {
-    invoke: (input: Partial<GraphState>) => Promise<GraphState>;
-  };
+  compiledGraph: CompiledStateGraph<
+    typeof StateAnnotation.State,
+    typeof StateAnnotation.Update,
+    string
+  >;
   thread_id: string;
   run_id: string;
 
@@ -125,6 +128,16 @@ export class CodeAgent {
     messages.push(new HumanMessage(query));
 
     await this.runGraph(messages);
+  }
+
+  async getMessages(): Promise<BaseMessage[]> {
+    const state = await this.compiledGraph.getState({
+      configurable: {
+        thread_id: this.thread_id
+      }
+    });
+    const values = state.values as GraphState;
+    return values.messages;
   }
 
   async initRun() {

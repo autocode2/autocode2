@@ -37,6 +37,31 @@ CREATE TABLE IF NOT EXISTS runs (
     }
   }
 
+  getAllNamespaces(): string[] {
+    const result = this.db
+      .prepare(`SELECT DISTINCT workdir FROM runs`)
+      .all() as { workdir: string }[];
+    return result.map((row) => row.workdir);
+  }
+
+  getRunsByNamespace(namespace: string): Row[] {
+    return this.db
+      .prepare(
+        `SELECT run_id, created_at, thread_id, workdir, config 
+        FROM runs 
+        WHERE workdir = ?
+        ORDER BY created_at DESC`
+      )
+      .all(namespace) as Row[];
+  }
+
+  getThreadsByNamespace(namespace: string): string[] {
+    const result = this.db
+      .prepare(`SELECT DISTINCT thread_id FROM runs WHERE workdir = ?`)
+      .all(namespace) as { thread_id: string }[];
+    return result.map((row) => row.thread_id);
+  }
+
   getRow(run_id: string): Row {
     return this.db
       .prepare(

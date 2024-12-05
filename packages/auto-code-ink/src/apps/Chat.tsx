@@ -3,13 +3,13 @@ import React, { useEffect } from "react";
 import { CodeAgent, CommandConfig } from "@autocode2/core";
 import { Box, Static, Text, useApp, useInput } from "ink";
 import Spinner from "ink-spinner";
-import TextInput from "./components/TextInput.js";
+import TextInput from "../components/TextInput.js";
 import StaticMessageDisplay, {
   type StaticMessage
-} from "./components/StaticMessage.js";
+} from "../components/StaticMessage.js";
 import { v4 as uuid } from "uuid";
-import CommandMenu from "./components/CommandMenu.js";
-import Usage from "./components/Usage.js";
+import CommandMenu from "../components/CommandMenu.js";
+import Usage from "../components/Usage.js";
 
 export default function App({
   config,

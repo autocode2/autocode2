@@ -1,7 +1,7 @@
 import Sqlite, { Database as DatabaseType } from "better-sqlite3";
 import { CheckpointSaver } from "./CheckpointSaver.js";
 import { CheckpointTable } from "./CheckpointTable.js";
-import { RunTable } from "./RunTable.js";
+import { RunTable, Row as Run } from "./RunTable.js";
 import { CommandConfig } from "../config/index.js";
 import { v4 as uuidv4 } from "uuid";
 import { VersionTable } from "./VersionTable.js";
@@ -98,4 +98,50 @@ export class Database {
 
     return { run_id, thread_id, isRestart };
   }
+
+  getThreads({ namespace }: { namespace: string }) {
+    const runs = this.runs().getRunsByNamespace(namespace);
+    const threads = runs.reduce(
+      (acc, run) => {
+        acc[run.thread_id] = acc[run.thread_id] || [];
+        acc[run.thread_id].push(run);
+        return acc;
+      },
+      {} as Record<string, Run[]>
+    );
+
+    const threadInfo = Object.entries(threads).map(([threadId, runs]) => {
+      const lastRun = runs[0];
+      return {
+        threadId,
+        runs: runs.length,
+        lastRun: lastRun.created_at
+      };
+    });
+
+    return threadInfo;
+  }
+
+  getNamespaces() {
+    const result = this.runs().getAllNamespaces();
+    return result
+      .map((namespace) => {
+        const runs = this.runs().getRunsByNamespace(namespace);
+        const lastRun = runs[0];
+
+        return {
+          namespace,
+          name: namespace.split("/").pop(),
+          runs: runs.length,
+          threads: this.runs().getThreadsByNamespace(namespace).length,
+          lastRun: lastRun.created_at
+        };
+      })
+      .sort((a, b) => {
+        return a.lastRun > b.lastRun ? -1 : 1;
+      });
+  }
 }
+
+export type ThreadInfo = ReturnType<Database["getThreads"]>[number];
+export type NamespaceInfo = ReturnType<Database["getNamespaces"]>[number];
